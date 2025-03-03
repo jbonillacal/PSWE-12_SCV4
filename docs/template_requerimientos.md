@@ -85,15 +85,6 @@ Este sistema es ideal para una arquitectura *serverless* porque:
 - Si la validación es rechazada, se debe proporcionar una razón clara (ej. baja calidad de imagen, no coincidencia facial).
 - Se debe permitir reintentar el proceso hasta un máximo de **tres intentos**.
 
----
-
-### **2.5. Reportes y monitoreo para administradores**
-
-### **Historia de usuario**
-
-> Como administrador, quiero acceder a reportes sobre el número de validaciones realizadas, su tasa de éxito y las razones de fallos.
-> 
-
 ### **Criterios de aceptación**
 
 - Se debe generar un **dashboard** con métricas sobre validaciones realizadas y su tasa de éxito.
