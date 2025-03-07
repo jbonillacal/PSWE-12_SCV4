@@ -11,7 +11,9 @@ RUN npm install
 COPY . .
 
 # Ensure Vue CLI is installed before building
-RUN npm install --save-dev @vue/cli-service
+RUN npm install --save-dev @vue/cli-service  
+RUN npm install --save-dev vue-template-compiler
+
 
 # Build the Vue app
 RUN npm run build
