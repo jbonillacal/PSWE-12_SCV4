@@ -29,6 +29,7 @@ jobs:
           GCP_REGION: ${{ secrets.GCP_REGION }}
           SERVICE_NAME: ${{ secrets.GCP_SERVICE_NAME }}
         run: |
+          cd project/gcr-vue-app  # Navigate to the correct directory
           docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/cloud-run-source-deploy/$SERVICE_NAME:latest .
           docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/cloud-run-source-deploy/$SERVICE_NAME:latest
 
