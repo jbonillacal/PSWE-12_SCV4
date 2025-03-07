@@ -1,6 +1,6 @@
 {
-    "name": "gcr-vue-app",
-    "lockfileVersion": 3,
-    "requires": true,
-    "packages": {}
-  }
+    "scripts": {
+      "serve": "vue-cli-service serve",
+      "build": "vue-cli-service build"
+    }
+}
