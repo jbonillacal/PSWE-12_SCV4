@@ -3,10 +3,14 @@ FROM node:18 as build-stage
 
 WORKDIR /app
 
-COPY ./project/gcr-vue-app/package.json ./project/gcr-vue-app/package-lock.json ./
+# Copy package files separately to optimize caching
+COPY package.json package-lock.json ./
 RUN npm install
 
+# Copy the rest of the application files
 COPY . .  
+
+# Build the Vue app
 RUN npm run build
 
 # Use nginx to serve the static files
