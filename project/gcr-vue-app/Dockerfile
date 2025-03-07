@@ -6,7 +6,7 @@ WORKDIR /app
 COPY ./project/gcr-vue-app/package.json ./project/gcr-vue-app/package-lock.json ./
 RUN npm install
 
-COPY gcr-vue-app ./
+COPY . .  
 RUN npm run build
 
 # Use nginx to serve the static files
