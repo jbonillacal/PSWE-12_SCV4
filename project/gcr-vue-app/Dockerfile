@@ -22,6 +22,10 @@ RUN npm run build
 FROM nginx:alpine as production-stage
 
 COPY --from=build-stage /app/dist /usr/share/nginx/html
-EXPOSE 80
+
+# Cloud Run requires the app to listen on PORT=8080
+ENV PORT=8080
+EXPOSE 8080
+
 
 CMD ["nginx", "-g", "daemon off;"]
