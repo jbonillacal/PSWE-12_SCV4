@@ -36,7 +36,7 @@ jobs:
         run: |
           gcloud functions deploy "$GCF_FUNCTION_NAME" \
             --runtime python310 \
-            --gcf-facial-recognition \
+            --trigger-http \
             --allow-unauthenticated \
             --region "$GCP_REGION" \
             --entry-point "$GCF_ENTRY_POINT" \
