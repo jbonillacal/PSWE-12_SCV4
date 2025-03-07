@@ -21,11 +21,12 @@ RUN npm run build
 # Use nginx to serve the static files
 FROM nginx:alpine as production-stage
 
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
 # Cloud Run requires the app to listen on PORT=8080
 ENV PORT=8080
 EXPOSE 8080
-
 
 CMD ["nginx", "-g", "daemon off;"]
