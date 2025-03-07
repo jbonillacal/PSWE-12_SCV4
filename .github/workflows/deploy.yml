@@ -35,6 +35,7 @@ jobs:
           GCF_ENTRY_POINT: ${{ secrets.GCF_ENTRY_POINT }}
         run: |
           gcloud functions deploy "$GCF_FUNCTION_NAME" \
+            --gen2 \
             --runtime python310 \
             --trigger-http \
             --allow-unauthenticated \
