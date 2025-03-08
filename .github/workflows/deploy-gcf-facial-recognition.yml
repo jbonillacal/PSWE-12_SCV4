@@ -1,0 +1,46 @@
+name: Deploy Vue.js to Cloud Run
+
+on:
+  push:
+    branches:
+      - main  # Deploy when pushing to main branch
+
+jobs:
+  deploy:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate with Google Cloud
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo "$GCP_SA_KEY" | base64 --decode > "$HOME"/gcp-key.json
+          gcloud auth activate-service-account --key-file="$HOME"/gcp-key.json
+          gcloud config set project "${{ secrets.GCP_PROJECT_ID }}"
+          gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Build and Push Docker Image
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ secrets.GCP_REGION }}
+          SERVICE_NAME: ${{ secrets.GCP_SERVICE_NAME }}
+        run: |
+          cd project/gcr-vue-app  # Navigate to the correct directory
+          docker build -t us-central1-docker.pkg.dev/$GCP_PROJECT_ID/cloud-run-source-deploy/$SERVICE_NAME:latest .
+          docker push us-central1-docker.pkg.dev/$GCP_PROJECT_ID/cloud-run-source-deploy/$SERVICE_NAME:latest
+
+      - name: Deploy to Cloud Run
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ secrets.GCP_REGION }}
+          SERVICE_NAME: ${{ secrets.GCP_SERVICE_NAME }}
+        run: |
+          gcloud run deploy $SERVICE_NAME \
+            --image us-central1-docker.pkg.dev/$GCP_PROJECT_ID/cloud-run-source-deploy/$SERVICE_NAME:latest \
+            --region $GCP_REGION \
+            --platform managed \
+            --allow-unauthenticated
