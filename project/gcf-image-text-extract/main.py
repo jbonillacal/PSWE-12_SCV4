@@ -1,3 +1,6 @@
+import google.cloud.logging
+client = google.cloud.logging.Client()
+client.setup_logging()
 import functions_framework
 import logging
 import os
@@ -14,6 +17,7 @@ def process_image(cloud_event):
     Extracts text from an image using Google Cloud Vision API.
     """
     try:
+        print("Starting") 
         data = cloud_event.data
         bucket_name = data["bucket"]
         file_name = data["name"]
@@ -31,6 +35,7 @@ def process_image(cloud_event):
 
         # Log the extracted text
         logging.info(f"Extracted Text: {extracted_text}")
+        print(extracted_text) 
 
     except Exception as e:
         logging.error(f"Error processing image: {str(e)}", exc_info=True)

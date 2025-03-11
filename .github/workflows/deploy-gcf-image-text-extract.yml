@@ -39,6 +39,7 @@ jobs:
             --runtime python310 \
             --trigger-event google.storage.object.finalize \
             --trigger-resource cenfotec-facial-recognition \
+            --allow-unauthenticated \
             --entry-point process_image \
             --region "$GCP_REGION" \
             --source ./project/gcf-image-text-extract/
