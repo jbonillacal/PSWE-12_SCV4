@@ -34,12 +34,12 @@ jobs:
           GCF_FUNCTION_NAME: ${{ secrets.GCF_FUNCTION_NAME }}
           GCF_ENTRY_POINT: ${{ secrets.GCF_ENTRY_POINT }}
         run: |
-        gcloud functions deploy gcf-image-text-extract \
-          --gen2 \
-          --runtime python310 \
-          --trigger-event google.storage.object.finalize \
-          --trigger-resource cenfotec-facial-recognition \
-          --entry-point process_image \
-          --region "$GCP_REGION" \
-          --source ./project/gcf-image-text-extract/
+          gcloud functions deploy "gcf-image-text-extract" \
+            --gen2 \
+            --runtime python310 \
+            --trigger-event google.storage.object.finalize \
+            --trigger-resource cenfotec-facial-recognition \
+            --entry-point process_image \
+            --region "$GCP_REGION" \
+            --source ./project/gcf-image-text-extract/
 
