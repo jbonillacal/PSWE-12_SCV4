@@ -41,6 +41,5 @@ jobs:
             --allow-unauthenticated \
             --region "$GCP_REGION" \
             --entry-point "$GCF_ENTRY_POINT" \
-            --source ./project/
-            /
+            --source ./project/gcf-facial-recognition/
 
