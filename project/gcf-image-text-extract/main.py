@@ -1,6 +1,3 @@
-import google.cloud.logging
-client = google.cloud.logging.Client()
-client.setup_logging()
 import functions_framework
 import logging
 import os
