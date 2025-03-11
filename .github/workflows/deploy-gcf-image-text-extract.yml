@@ -1,4 +1,4 @@
-name: Deploy to GCP Cloud Functions
+name: Deploy to GCP Cloud Functions gcf-image-text-extract
 
 on:
   push:
