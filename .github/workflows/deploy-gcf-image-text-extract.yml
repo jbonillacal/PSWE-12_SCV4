@@ -34,7 +34,6 @@ jobs:
           GCF_FUNCTION_NAME: ${{ secrets.GCF_FUNCTION_NAME }}
           GCF_ENTRY_POINT: ${{ secrets.GCF_ENTRY_POINT }}
         run: |
-
         gcloud functions deploy gcf-image-text-extract \
           --gen2 \
           --runtime python310 \
