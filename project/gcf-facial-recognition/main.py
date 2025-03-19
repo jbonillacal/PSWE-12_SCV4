@@ -48,9 +48,14 @@ def compute_similarity(landmarks1, landmarks2):
 
 def call_image_text_extract(id_picture_bytes):
     url = "https://us-central1-cenfotec2024.cloudfunctions.net/gcf-image-text-extract"
-    response = requests.post(url, files=id_picture_bytes)
+    
+    files = {
+        "image": ("image.jpg", id_picture_bytes, "image/jpeg")  # Correct format
+    }
 
-    logging.info(response.json()) 
+    response = requests.post(url, files=files)
+
+    print(response.json())
 
 
 @functions_framework.http
