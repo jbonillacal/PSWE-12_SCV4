@@ -93,8 +93,8 @@ def parse_extracted_text(extracted_text, match, similarity_score):
             parsed_data["lastName1"] = line.replace("1° Apellido:", "").strip()
         elif line.startswith("2° Apellido:"):
             parsed_data["lastName2"] = line.replace("2° Apellido:", "").strip()
-    parsed_data["match"] = match
-    parsed_data["similarity_score"] = similarity_score
+    parsed_data["match"] = bool(match)
+    parsed_data["similarity_score"] = float(similarity_score)
     return json.dumps(parsed_data, ensure_ascii=False, indent=4)
 
 
@@ -146,7 +146,7 @@ def verify_identity(request):
     json_response = call_image_text_extract(id_picture_bytes)
     extracted_text = json_response.get("extracted_text", "")
 
-    json_output = parse_extracted_text(extracted_text, bool(match),float(similarity_score))
+    json_output = parse_extracted_text(extracted_text, match,similarity_score)
 
     response = jsonify({
         "match": bool(match),  # Ensure it is JSON serializable
