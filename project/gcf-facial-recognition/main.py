@@ -3,21 +3,6 @@ from google.cloud import vision
 from flask import request, jsonify, make_response
 import numpy as np
 
-def detect_faces(image_bytes):
-    """Detects faces and returns face annotations using Google Cloud Vision AI."""
-    client = vision.ImageAnnotatorClient()
-    image = vision.Image(content=image_bytes)
-    response = client.face_detection(image=image)
-
-    if response.error.message:
-        raise Exception(f"Cloud Vision AI Error: {response.error.message}")
-
-    faces = response.face_annotations
-    if not faces:
-        return None
-
-    return faces[0]  # Return the first detected face
-
 def detect_face_landmarks(image_bytes):
     """Detects face landmarks and returns their positions using Google Cloud Vision AI."""
     client = vision.ImageAnnotatorClient()
@@ -58,47 +43,28 @@ def compute_similarity(landmarks1, landmarks2):
 def verify_identity(request):
     """Cloud Function to verify if ID picture and selfie belong to the same person using Google Cloud Vision AI."""
 
-    # ✅ Explicitly set the allowed headers for CORS
+    # Explicitly set the allowed headers for CORS
     cors_headers = {
         "Access-Control-Allow-Origin": "*",  # Or specify 'http://localhost:8080' if needed
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With"
     }
 
-    # ✅ Handle CORS Preflight Request (OPTIONS)
+    # Handle CORS Preflight Request (OPTIONS)
     if request.method == "OPTIONS":
         response = make_response("", 204)
         response.headers.update(cors_headers)
         return response
 
-    # ✅ Check if required files are included in request
+    # Check if required files are included in request
     if 'id_picture' not in request.files or 'selfie' not in request.files:
         response = jsonify({"error": "Both 'id_picture' and 'selfie' must be provided"})
         response.status_code = 400
         response.headers.update(cors_headers)
         return response
 
-    #id_picture = vision.Image(content=request.files['id_picture'].read())
-    #selfie = vision.Image(content=request.files['selfie'].read())
-
     id_picture_bytes = request.files['id_picture'].read()
     selfie_bytes = request.files['selfie'].read()
-
-    # ✅ Extract faces using Cloud Vision AI
-    # id_face = detect_faces(id_picture)
-    # selfie_face = detect_faces(selfie)
-
-    #if id_face is None:
-    #    response = jsonify({"error": "No face detected in ID picture"})
-    #    response.status_code = 400
-    #    response.headers.update(cors_headers)
-    #    return response
-
-    #if selfie_face is None:
-    #    response = jsonify({"error": "No face detected in selfie"})
-    #    response.status_code = 400
-    #    response.headers.update(cors_headers)
-    #    return response
 
     id_landmarks = detect_face_landmarks(id_picture_bytes)
     selfie_landmarks = detect_face_landmarks(selfie_bytes)      
@@ -115,18 +81,6 @@ def verify_identity(request):
         response.headers.update(cors_headers)
         return response
 
-    # ✅ Compare faces using bounding box similarity (simplified approach)
-    # similarity_score = 1.0 if id_face.detection_confidence > 0.7 and selfie_face.detection_confidence > 0.7 else 0.5
-    # match = similarity_score > 0.75
-
-    # ✅ Include CORS headers in every response
-    # response = jsonify({
-    #    "match": match,
-    #    "similarity_score": similarity_score
-    # })
-    # response.status_code = 200
-    # response.headers.update(cors_headers)
-
     similarity_score = compute_similarity(id_landmarks, selfie_landmarks)
     match = similarity_score > 0.7  # Adjust threshold for better accuracy
 
@@ -136,7 +90,5 @@ def verify_identity(request):
     })
     response.status_code = 200
     response.headers.update(cors_headers)
-    
-    return response
     
     return response
