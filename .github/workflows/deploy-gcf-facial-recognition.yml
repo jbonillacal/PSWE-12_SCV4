@@ -32,7 +32,6 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           GCP_REGION: ${{ secrets.GCP_REGION }}
           GCF_FUNCTION_NAME: ${{ secrets.GCF_FUNCTION_NAME }}
-          GCF_ENTRY_POINT: ${{ secrets.GCF_ENTRY_POINT }}
         run: |
           gcloud functions deploy "$GCF_FUNCTION_NAME" \
             --gen2 \
@@ -40,6 +39,6 @@ jobs:
             --trigger-http \
             --allow-unauthenticated \
             --region "$GCP_REGION" \
-            --entry-point "$GCF_ENTRY_POINT" \
+            --entry-point verify_identity \
             --source ./project/gcf-facial-recognition/
 
