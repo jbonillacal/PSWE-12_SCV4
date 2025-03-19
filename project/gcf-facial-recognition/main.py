@@ -2,9 +2,15 @@ import functions_framework
 from google.cloud import vision
 from flask import request, jsonify, make_response
 import numpy as np
+import logging
+import google.cloud.logging
+
+client = google.cloud.logging.Client()
+client.setup_logging()
 
 def detect_face_landmarks(image_bytes):
     """Detects face landmarks and returns their positions using Google Cloud Vision AI."""
+    logger.info("This is an INFO log")
     client = vision.ImageAnnotatorClient()
     image = vision.Image(content=image_bytes)
     response = client.face_detection(image=image)

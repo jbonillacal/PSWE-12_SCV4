@@ -2,3 +2,4 @@ functions-framework==3.*
 google-cloud-vision
 flask
 numpy
+google-cloud-logging
