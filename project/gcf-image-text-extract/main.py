@@ -28,16 +28,11 @@ def process_image_http(request):
         if request.method != "POST":
             return jsonify({"error": "Only POST method is allowed"}), 405
 
-        # Validate request content type
-        if "image" not in request.files:
-            return jsonify({"error": "No image file found in the request"}), 400
-
-        # Read image bytes
-        image_file = request.files["image"]
-        image_bytes = image_file.read()
+        # Read image bytes directly from request body
+        image_bytes = request.data  
 
         if not image_bytes:
-            return jsonify({"error": "Empty image file"}), 400
+            return jsonify({"error": "Empty image data"}), 400
 
         # Extract text using Google Cloud Vision API
         extracted_text = extract_text_from_image(image_bytes)
