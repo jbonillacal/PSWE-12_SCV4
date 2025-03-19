@@ -131,8 +131,8 @@ def verify_identity(request):
     match = similarity_score > 0.7  # Adjust threshold for better accuracy
 
     response = jsonify({
-        "match": match,
-        "similarity_score": similarity_score
+        "match": bool(match),  # Ensure it is JSON serializable
+        "similarity_score": float(similarity_score)  # Ensure it is a valid number
     })
     response.status_code = 200
     response.headers.update(cors_headers)
