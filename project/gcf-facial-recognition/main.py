@@ -3,6 +3,8 @@ import numpy as np
 import logging
 import google.cloud.logging
 import requests
+import re
+import json
 from google.cloud import vision
 from flask import request, jsonify, make_response
 
@@ -53,6 +55,46 @@ def call_image_text_extract(id_picture_bytes):
     }
     response = requests.post(url, headers=headers, data=id_picture_bytes)
     print(response.json())  # Extracted text or error response
+    extracted_text = json_response.get("extracted_text", "")
+    json_output = parse_extracted_text(extracted_text)
+    print(json_output)
+
+
+def parse_extracted_text(extracted_text):
+    """Parses extracted text to generate structured JSON data."""
+    # Initialize the dictionary with default values
+    parsed_data = {
+        "country": None,
+        "id": None,
+        "name": None,
+        "lastName1": None,
+        "lastName2": None
+    }
+
+    # Split text into lines for easier processing
+    lines = extracted_text.split("\n")
+
+    for line in lines:
+        line = line.strip()
+
+        # Extract country (first line)
+        if "REPÚBLICA" in line:
+            parsed_data["country"] = line
+
+        # Extract ID (assuming format X XXXX XXXX)
+        match = re.search(r"\b\d{1} \d{4} \d{4}\b", line)
+        if match:
+            parsed_data["id"] = match.group(0)
+
+        # Extract name fields
+        if line.startswith("Nombre:"):
+            parsed_data["name"] = line.replace("Nombre:", "").strip()
+        elif line.startswith("1° Apellido:"):
+            parsed_data["lastName1"] = line.replace("1° Apellido:", "").strip()
+        elif line.startswith("2° Apellido:"):
+            parsed_data["lastName2"] = line.replace("2° Apellido:", "").strip()
+
+    return json.dumps(parsed_data, ensure_ascii=False, indent=4)
 
 
 @functions_framework.http
