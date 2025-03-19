@@ -37,10 +37,9 @@ jobs:
           gcloud functions deploy "gcf-image-text-extract" \
             --gen2 \
             --runtime python310 \
-            --trigger-event google.storage.object.finalize \
-            --trigger-resource cenfotec-facial-recognition \
+            --trigger-http \
             --allow-unauthenticated \
-            --entry-point process_image \
+            --entry-point process_image_http \
             --region "$GCP_REGION" \
             --source ./project/gcf-image-text-extract/
 

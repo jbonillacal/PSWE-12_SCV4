@@ -1,52 +1,57 @@
 import functions_framework
 import logging
-import os
-from google.cloud import storage, vision
+import google.cloud.logging
+from flask import request, jsonify
+from google.cloud import vision
 from google.cloud.vision_v1 import ImageAnnotatorClient
 
-# Initialize Google Cloud clients
-storage_client = storage.Client()
+client = google.cloud.logging.Client()
+client.setup_logging()
+
+# Initialize Google Cloud Vision client
 vision_client = ImageAnnotatorClient()
 
-@functions_framework.cloud_event
-def process_image(cloud_event):
-    """Triggered by a new file upload in Cloud Storage.
-    Extracts text from an image using Google Cloud Vision API.
-    """
+@functions_framework.http
+def process_image_http(request):
+    """HTTP Cloud Function with CORS support that extracts text from an uploaded image."""
+    
+    # Allow CORS preflight requests
+    if request.method == "OPTIONS":
+        headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        }
+        return ("", 204, headers)
+
     try:
-        print("Starting") 
-        data = cloud_event.data
-        bucket_name = data["bucket"]
-        file_name = data["name"]
+        if request.method != "POST":
+            return jsonify({"error": "Only POST method is allowed"}), 405
 
-        logging.info(f"Processing file: {file_name} from bucket: {bucket_name}")
+        # Validate request content type
+        if "image" not in request.files:
+            return jsonify({"error": "No image file found in the request"}), 400
 
-        # Download image
-        image_bytes = download_image(bucket_name, file_name)
+        # Read image bytes
+        image_file = request.files["image"]
+        image_bytes = image_file.read()
+
         if not image_bytes:
-            logging.error("Failed to download image.")
-            return
+            return jsonify({"error": "Empty image file"}), 400
 
-        # Extract text using Google Cloud Vision
+        # Extract text using Google Cloud Vision API
         extracted_text = extract_text_from_image(image_bytes)
 
-        # Log the extracted text
-        logging.info(f"Extracted Text: {extracted_text}")
-        print(extracted_text) 
+        # JSON response with CORS headers
+        response = jsonify({"extracted_text": extracted_text})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response
 
     except Exception as e:
         logging.error(f"Error processing image: {str(e)}", exc_info=True)
-
-
-def download_image(bucket_name, file_name):
-    """Downloads an image from Cloud Storage."""
-    try:
-        bucket = storage_client.bucket(bucket_name)
-        blob = bucket.blob(file_name)
-        return blob.download_as_bytes()
-    except Exception as e:
-        logging.error(f"Error downloading image: {str(e)}")
-        return None
+        response = jsonify({"error": "Internal Server Error"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 500
 
 
 def extract_text_from_image(image_bytes):

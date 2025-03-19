@@ -1,9 +1,11 @@
 import functions_framework
-from google.cloud import vision
-from flask import request, jsonify, make_response
 import numpy as np
 import logging
 import google.cloud.logging
+import requests
+from google.cloud import vision
+from flask import request, jsonify, make_response
+
 
 client = google.cloud.logging.Client()
 client.setup_logging()
@@ -43,6 +45,13 @@ def compute_similarity(landmarks1, landmarks2):
     similarity_score = np.exp(-distance / 100.0)  # Scaling for better comparison
 
     return similarity_score
+
+def call_image_text_extract(id_picture_bytes):
+    url = "https://us-central1-cenfotec2024.cloudfunctions.net/gcf-image-text-extract"
+    response = requests.post(url, files=id_picture_bytes)
+
+    logging.info(response.json()) 
+
 
 @functions_framework.http
 def verify_identity(request):
@@ -88,6 +97,8 @@ def verify_identity(request):
 
     similarity_score = compute_similarity(id_landmarks, selfie_landmarks)
     match = similarity_score > 0.4  # Adjust threshold for better accuracy
+
+    call_image_text_extract(id_picture_bytes)
 
     response = jsonify({
         "match": bool(match),  # Ensure it is JSON serializable
