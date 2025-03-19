@@ -28,10 +28,10 @@ def detect_face_landmarks(image_bytes):
         raise Exception(f"Cloud Vision AI Error: {response.error.message}")
 
     faces = response.face_annotations
-    if not faces:
-        return None
+    if not faces or not faces[0].landmarks:
+        return None  # No landmarks detected, return None instead of an empty list
 
-    return faces[0].landmarks  # Return facial landmarks
+    return faces[0].landmarks 
 
 def compute_similarity(landmarks1, landmarks2):
     """Computes Euclidean distance between two sets of facial landmarks."""
@@ -41,13 +41,15 @@ def compute_similarity(landmarks1, landmarks2):
     points1 = np.array([[lm.position.x, lm.position.y, lm.position.z] for lm in landmarks1])
     points2 = np.array([[lm.position.x, lm.position.y, lm.position.z] for lm in landmarks2])
 
-    # Ensure both images have the same number of landmarks
+    # Match lengths to avoid shape mismatch errors
     min_length = min(len(points1), len(points2))
-    points1, points2 = points1[:min_length], points2[:min_length]
+    points1 = points1[:min_length]
+    points2 = points2[:min_length]
 
+    # Compute Euclidean distance
     distance = np.linalg.norm(points1 - points2)
     
-    # Normalize similarity score (lower distance = higher similarity)
+    # Normalize similarity score
     similarity_score = np.exp(-distance / 100.0)  # Scaling for better comparison
 
     return similarity_score
@@ -76,8 +78,8 @@ def verify_identity(request):
         response.headers.update(cors_headers)
         return response
 
-    id_picture = request.files['id_picture'].read()
-    selfie = request.files['selfie'].read()
+    id_picture = vision.Image(content=request.files['id_picture'].read())
+    selfie = vision.Image(content=request.files['selfie'].read())
 
     
 
