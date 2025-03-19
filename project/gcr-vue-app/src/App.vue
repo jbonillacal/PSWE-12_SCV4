@@ -21,7 +21,12 @@
       </div>
     </div>
 
-    <button @click="verifyIdentity" :disabled="!image1 || !image2">Verificar Identidad</button>
+    <button @click="verifyIdentity" :disabled="!image1 || !image2 || isLoading">Verificar Identidad</button>
+    
+    <div v-if="isLoading" class="loading-bar-container">
+      <div class="loading-bar"></div>
+    </div>
+
     <p v-if="result">Resultado: {{ result }}</p>
   </div>
 </template>
@@ -36,7 +41,8 @@ export default {
       image1Preview: null,
       image2Preview: null,
       videoStream: null,
-      result: null
+      result: null,
+      isLoading: false
     };
   },
   mounted() {
@@ -81,6 +87,8 @@ export default {
       }, "image/png");
     },
     async verifyIdentity() {
+      this.isLoading = true;
+      this.result = null;
       const formData = new FormData();
       formData.append("id_picture", this.image1);
       formData.append("selfie", this.image2);
@@ -96,6 +104,8 @@ export default {
       } catch (error) {
         console.error("Error en la verificación:", error);
         this.result = "Error al verificar identidad";
+      } finally {
+        this.isLoading = false;
       }
     }
   },
@@ -190,5 +200,25 @@ button:hover {
   .upload-box {
     width: 100%;
   }
+}
+
+.loading-bar-container {
+  width: 100%;
+  height: 5px;
+  background-color: #f0f0f0;
+  margin-top: 10px;
+}
+
+.loading-bar {
+  width: 100%;
+  height: 100%;
+  background-color: #42b983;
+  animation: loading 1.5s infinite ease-in-out;
+}
+
+@keyframes loading {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
 }
 </style>
