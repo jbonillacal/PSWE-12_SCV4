@@ -10,7 +10,6 @@ client.setup_logging()
 
 def detect_face_landmarks(image_bytes):
     """Detects face landmarks and returns their positions using Google Cloud Vision AI."""
-    logger.info("This is an INFO log")
     client = vision.ImageAnnotatorClient()
     image = vision.Image(content=image_bytes)
     response = client.face_detection(image=image)
@@ -48,7 +47,7 @@ def compute_similarity(landmarks1, landmarks2):
 @functions_framework.http
 def verify_identity(request):
     """Cloud Function to verify if ID picture and selfie belong to the same person using Google Cloud Vision AI."""
-
+    logging.info("This is an INFO log")
     # Explicitly set the allowed headers for CORS
     cors_headers = {
         "Access-Control-Allow-Origin": "*",  # Or specify 'http://localhost:8080' if needed
