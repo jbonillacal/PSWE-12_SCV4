@@ -67,8 +67,8 @@ def parse_extracted_text(extracted_text, match, similarity_score):
         "name": None,
         "lastName1": None,
         "lastName2": None,
-        "match": None,
-        "similarityScore": None
+        "match": bool(match),  # Ensure match is a boolean
+        "similarityScore": float(similarity_score)  # Convert similarity score to float
     }
 
     # Split text into lines for easier processing
@@ -93,8 +93,6 @@ def parse_extracted_text(extracted_text, match, similarity_score):
             parsed_data["lastName1"] = line.replace("1° Apellido:", "").strip()
         elif line.startswith("2° Apellido:"):
             parsed_data["lastName2"] = line.replace("2° Apellido:", "").strip()
-    parsed_data["match"] = bool(match)
-    parsed_data["similarity_score"] = float(similarity_score)
     return json.dumps(parsed_data, ensure_ascii=False, indent=4)
 
 
