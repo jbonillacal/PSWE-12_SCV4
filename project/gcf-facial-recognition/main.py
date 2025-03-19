@@ -146,6 +146,8 @@ def verify_identity(request):
 
     json_output = parse_extracted_text(extracted_text, match,similarity_score)
 
+    print(json_output)
+
     response = jsonify({
         "match": bool(match),  # Ensure it is JSON serializable
         "similarity_score": float(similarity_score)  # Ensure it is a valid number
