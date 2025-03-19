@@ -44,7 +44,7 @@ export default {
     handleFileUpload(event, imageKey) {
       const file = event.target.files[0];
       if (file) {
-        this[imageKey] = URL.createObjectURL(file);
+        this[imageKey] = file;
       }
     },
     async startCamera() {
@@ -64,12 +64,14 @@ export default {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      this.image2 = canvas.toDataURL("image/png");
+      canvas.toBlob(blob => {
+        this.image2 = blob;
+      }, "image/png");
     },
     async verifyIdentity() {
       const formData = new FormData();
-      formData.append("id_picture", this.dataURItoBlob(this.image1));
-      formData.append("selfie", this.dataURItoBlob(this.image2));
+      formData.append("id_picture", this.image1);
+      formData.append("selfie", this.image2);
       
       try {
         const response = await fetch("https://us-central1-cenfotec2024.cloudfunctions.net/gcf-facial-recognition", {
@@ -82,16 +84,6 @@ export default {
         console.error("Error en la verificación:", error);
         this.result = "Error al verificar identidad";
       }
-    },
-    dataURItoBlob(dataURI) {
-      const byteString = atob(dataURI.split(",")[1]);
-      const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      return new Blob([ab], { type: mimeString });
     }
   },
   beforeUnmount() {
