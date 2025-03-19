@@ -76,7 +76,11 @@ export default {
       try {
         const response = await fetch("https://us-central1-cenfotec2024.cloudfunctions.net/gcf-facial-recognition", {
           method: "POST",
-          body: formData
+          body: formData,
+          mode: "cors",  // Enables Cross-Origin Requests
+          headers: {
+            "Access-Control-Allow-Origin": "*"
+          }
         });
         const data = await response.json();
         this.result = data.match ? "Las imágenes coinciden" : "Las imágenes no coinciden";
