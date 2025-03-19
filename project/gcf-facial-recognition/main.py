@@ -101,7 +101,7 @@ def verify_identity(request):
     #    return response
 
     id_landmarks = detect_face_landmarks(id_picture_bytes)
-    elfie_landmarks = detect_face_landmarks(selfie_bytes)      
+    selfie_landmarks = detect_face_landmarks(selfie_bytes)      
 
     if id_landmarks is None:
         response = jsonify({"error": "No face detected in ID picture"})
