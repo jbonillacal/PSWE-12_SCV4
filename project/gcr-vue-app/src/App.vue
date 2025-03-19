@@ -27,7 +27,9 @@
       <div class="loading-bar"></div>
     </div>
 
-    <p v-if="result">Resultado: {{ result }}</p>
+    <p v-if="result" :class="{'match': result === 'Las imágenes coinciden', 'no-match': result === 'Las imágenes no coinciden'}">
+      {{ result }}
+    </p>
   </div>
 </template>
 
@@ -220,5 +222,23 @@ button:hover {
   0% { transform: translateX(-100%); }
   50% { transform: translateX(0); }
   100% { transform: translateX(100%); }
+}
+
+.match {
+  color: green;
+  font-weight: bold;
+  font-size: 1.5em;
+}
+
+.no-match {
+  color: red;
+  font-weight: bold;
+  font-size: 1.5em;
+  animation: blink 1s infinite alternate;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  100% { opacity: 0.5; }
 }
 </style>
