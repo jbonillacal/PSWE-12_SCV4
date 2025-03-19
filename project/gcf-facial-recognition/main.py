@@ -55,7 +55,8 @@ def call_image_text_extract(id_picture_bytes):
     }
     response = requests.post(url, headers=headers, data=id_picture_bytes)
     print(response.json())  # Extracted text or error response
-    extracted_text = response.get("extracted_text", "")
+    json_response = response.json()  # Convert response to dictionary
+    extracted_text = json_response.get("extracted_text", "")
     json_output = parse_extracted_text(extracted_text)
     print(json_output)
 
