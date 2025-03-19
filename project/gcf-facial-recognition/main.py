@@ -55,13 +55,10 @@ def call_image_text_extract(id_picture_bytes):
     }
     response = requests.post(url, headers=headers, data=id_picture_bytes)
     print(response.json())  # Extracted text or error response
-    json_response = response.json()  # Convert response to dictionary
-    extracted_text = json_response.get("extracted_text", "")
-    json_output = parse_extracted_text(extracted_text)
-    print(json_output)
+    return response.json()
 
 
-def parse_extracted_text(extracted_text):
+def parse_extracted_text(extracted_text, match, similarity_score):
     """Parses extracted text to generate structured JSON data."""
     # Initialize the dictionary with default values
     parsed_data = {
@@ -69,7 +66,9 @@ def parse_extracted_text(extracted_text):
         "id": None,
         "name": None,
         "lastName1": None,
-        "lastName2": None
+        "lastName2": None,
+        "match": None,
+        "similarityScore": None
     }
 
     # Split text into lines for easier processing
@@ -94,7 +93,8 @@ def parse_extracted_text(extracted_text):
             parsed_data["lastName1"] = line.replace("1° Apellido:", "").strip()
         elif line.startswith("2° Apellido:"):
             parsed_data["lastName2"] = line.replace("2° Apellido:", "").strip()
-
+    parsed_data["match"] = match
+    parsed_data["similarity_score"] = similarity_score
     return json.dumps(parsed_data, ensure_ascii=False, indent=4)
 
 
@@ -143,7 +143,10 @@ def verify_identity(request):
     similarity_score = compute_similarity(id_landmarks, selfie_landmarks)
     match = similarity_score > 0.4  # Adjust threshold for better accuracy
 
-    call_image_text_extract(id_picture_bytes)
+    json_response = call_image_text_extract(id_picture_bytes)
+    extracted_text = json_response.get("extracted_text", "")
+
+    json_output = parse_extracted_text(extracted_text, bool(match),float(similarity_score))
 
     response = jsonify({
         "match": bool(match),  # Ensure it is JSON serializable
