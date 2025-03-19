@@ -8,7 +8,7 @@
       <div class="upload-box">
         <label>Subir Imagen 1:</label>
         <input type="file" accept="image/*" @change="handleFileUpload($event, 'image1')" />
-        <img v-if="image1" :src="image1" alt="Vista Previa" class="preview" />
+        <img v-if="image1" :src="image1Preview" alt="Vista Previa" class="preview" />
       </div>
 
       <!-- Caja para Subir o Capturar Imagen 2 -->
@@ -17,7 +17,7 @@
         <input type="file" accept="image/*" @change="handleFileUpload($event, 'image2')" />
         <video v-if="!image2" ref="video" autoplay class="preview"></video>
         <button v-if="!image2" @click="capturePhoto">📸 Tomar Foto</button>
-        <img v-if="image2" :src="image2" alt="Vista Previa" class="preview" />
+        <img v-if="image2" :src="image2Preview" alt="Vista Previa" class="preview" />
       </div>
     </div>
 
@@ -33,6 +33,8 @@ export default {
     return {
       image1: null,
       image2: null,
+      image1Preview: null,
+      image2Preview: null,
       videoStream: null,
       result: null
     };
@@ -45,6 +47,15 @@ export default {
       const file = event.target.files[0];
       if (file) {
         this[imageKey] = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (imageKey === 'image1') {
+            this.image1Preview = e.target.result;
+          } else {
+            this.image2Preview = e.target.result;
+          }
+        };
+        reader.readAsDataURL(file);
       }
     },
     async startCamera() {
@@ -66,6 +77,7 @@ export default {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(blob => {
         this.image2 = blob;
+        this.image2Preview = URL.createObjectURL(blob);
       }, "image/png");
     },
     async verifyIdentity() {
@@ -77,10 +89,7 @@ export default {
         const response = await fetch("https://us-central1-cenfotec2024.cloudfunctions.net/gcf-facial-recognition", {
           method: "POST",
           body: formData,
-          mode: "cors",  // Enables Cross-Origin Requests
-          headers: {
-            "Access-Control-Allow-Origin": "*"
-          }
+          mode: "cors"
         });
         const data = await response.json();
         this.result = data.match ? "Las imágenes coinciden" : "Las imágenes no coinciden";
@@ -97,6 +106,7 @@ export default {
   }
 };
 </script>
+
 
 <style>
 /* Diseño General */
