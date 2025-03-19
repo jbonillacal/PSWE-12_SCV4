@@ -20,20 +20,21 @@ def detect_faces(image_bytes):
 @functions_framework.http
 def verify_identity(request):
     """Cloud Function to verify if ID picture and selfie belong to the same person using Google Cloud Vision AI."""
-    
-    # Set CORS headers
+
+    # ✅ Explicitly set the allowed headers for CORS
     cors_headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": "*",  # Or specify 'http://localhost:8080' if needed
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With"
     }
 
-    # Handle CORS preflight request
+    # ✅ Handle CORS Preflight Request (OPTIONS)
     if request.method == "OPTIONS":
-        response = make_response('', 204)
+        response = make_response("", 204)
         response.headers.update(cors_headers)
         return response
 
+    # ✅ Check if required files are included in request
     if 'id_picture' not in request.files or 'selfie' not in request.files:
         response = jsonify({"error": "Both 'id_picture' and 'selfie' must be provided"})
         response.status_code = 400
@@ -43,7 +44,7 @@ def verify_identity(request):
     id_picture = request.files['id_picture'].read()
     selfie = request.files['selfie'].read()
 
-    # Extract faces using Cloud Vision AI
+    # ✅ Extract faces using Cloud Vision AI
     id_face = detect_faces(id_picture)
     selfie_face = detect_faces(selfie)
 
@@ -59,10 +60,11 @@ def verify_identity(request):
         response.headers.update(cors_headers)
         return response
 
-    # Compare faces using bounding box similarity (simplified approach)
+    # ✅ Compare faces using bounding box similarity (simplified approach)
     similarity_score = 1.0 if id_face.detection_confidence > 0.7 and selfie_face.detection_confidence > 0.7 else 0.5
     match = similarity_score > 0.75
 
+    # ✅ Include CORS headers in every response
     response = jsonify({
         "match": match,
         "similarity_score": similarity_score
