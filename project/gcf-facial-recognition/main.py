@@ -84,20 +84,20 @@ def verify_identity(request):
     
 
     # ✅ Extract faces using Cloud Vision AI
-    id_face = detect_faces(id_picture)
-    selfie_face = detect_faces(selfie)
+    # id_face = detect_faces(id_picture)
+    # selfie_face = detect_faces(selfie)
 
-    if id_face is None:
-        response = jsonify({"error": "No face detected in ID picture"})
-        response.status_code = 400
-        response.headers.update(cors_headers)
-        return response
+    #if id_face is None:
+    #    response = jsonify({"error": "No face detected in ID picture"})
+    #    response.status_code = 400
+    #    response.headers.update(cors_headers)
+    #    return response
 
-    if selfie_face is None:
-        response = jsonify({"error": "No face detected in selfie"})
-        response.status_code = 400
-        response.headers.update(cors_headers)
-        return response
+    #if selfie_face is None:
+    #    response = jsonify({"error": "No face detected in selfie"})
+    #    response.status_code = 400
+    #    response.headers.update(cors_headers)
+    #    return response
 
     id_landmarks = detect_face_landmarks(id_picture)
     selfie_landmarks = detect_face_landmarks(selfie)
