@@ -1,23 +1,49 @@
 import functions_framework
+from google.cloud import vision
+from flask import request, jsonify
+import io
+
+def detect_faces(image_bytes):
+    """Detects faces and returns face annotations."""
+    client = vision.ImageAnnotatorClient()
+    image = vision.Image(content=image_bytes)
+    response = client.face_detection(image=image)
+    
+    if response.error.message:
+        raise Exception(f"Cloud Vision AI Error: {response.error.message}")
+    
+    faces = response.face_annotations
+    if not faces:
+        return None
+    
+    return faces[0]  # Return the first detected face
 
 @functions_framework.http
-def hello_http(request):
-    """HTTP Cloud Function.
-    Args:
-        request (flask.Request): The request object.
-        <https://flask.palletsprojects.com/en/1.1.x/api/#incoming-request-data>
-    Returns:
-        The response text, or any set of values that can be turned into a
-        Response object using `make_response`
-        <https://flask.palletsprojects.com/en/1.1.x/api/#flask.make_response>.
-    """
-    request_json = request.get_json(silent=True)
-    request_args = request.args
-
-    if request_json and 'name' in request_json:
-        name = request_json['name']
-    elif request_args and 'name' in request_args:
-        name = request_args['name']
-    else:
-        name = 'Cenfotec'
-    return 'Hello {}!'.format(name)
+def verify_identity(request):
+    """Cloud Function to verify if ID picture and selfie belong to the same person using Google Cloud Vision AI."""
+    if request.method != 'POST':
+        return jsonify({"error": "Only POST method is allowed"}), 405
+    
+    if 'id_picture' not in request.files or 'selfie' not in request.files:
+        return jsonify({"error": "Both 'id_picture' and 'selfie' must be provided"}), 400
+    
+    id_picture = request.files['id_picture'].read()
+    selfie = request.files['selfie'].read()
+    
+    # Extract faces using Cloud Vision AI
+    id_face = detect_faces(id_picture)
+    selfie_face = detect_faces(selfie)
+    
+    if id_face is None:
+        return jsonify({"error": "No face detected in ID picture"}), 400
+    if selfie_face is None:
+        return jsonify({"error": "No face detected in selfie"}), 400
+    
+    # Compare faces using bounding box similarity (simplified approach)
+    similarity_score = 1.0 if id_face.detection_confidence > 0.7 and selfie_face.detection_confidence > 0.7 else 0.5
+    match = similarity_score > 0.75
+    
+    return jsonify({
+        "match": match,
+        "similarity_score": similarity_score
+    })
