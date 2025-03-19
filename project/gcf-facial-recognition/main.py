@@ -82,7 +82,7 @@ def verify_identity(request):
         return response
 
     similarity_score = compute_similarity(id_landmarks, selfie_landmarks)
-    match = similarity_score > 0.7  # Adjust threshold for better accuracy
+    match = similarity_score > 0.4  # Adjust threshold for better accuracy
 
     response = jsonify({
         "match": bool(match),  # Ensure it is JSON serializable
