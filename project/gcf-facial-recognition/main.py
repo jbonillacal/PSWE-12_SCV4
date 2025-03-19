@@ -21,6 +21,15 @@ def detect_faces(image_bytes):
 @functions_framework.http
 def verify_identity(request):
     """Cloud Function to verify if ID picture and selfie belong to the same person using Google Cloud Vision AI."""
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+    }
+
+    if request.method == "OPTIONS":
+        return ('', 204, headers)  # Handle preflight requests
+
     if request.method != 'POST':
         return jsonify({"error": "Only POST method is allowed"}), 405
     
