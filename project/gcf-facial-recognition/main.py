@@ -78,10 +78,11 @@ def verify_identity(request):
         response.headers.update(cors_headers)
         return response
 
-    id_picture = vision.Image(content=request.files['id_picture'].read())
-    selfie = vision.Image(content=request.files['selfie'].read())
+    #id_picture = vision.Image(content=request.files['id_picture'].read())
+    #selfie = vision.Image(content=request.files['selfie'].read())
 
-    
+    id_picture_bytes = request.files['id_picture'].read()
+    selfie_bytes = request.files['selfie'].read()
 
     # ✅ Extract faces using Cloud Vision AI
     # id_face = detect_faces(id_picture)
@@ -99,8 +100,8 @@ def verify_identity(request):
     #    response.headers.update(cors_headers)
     #    return response
 
-    id_landmarks = detect_face_landmarks(id_picture)
-    selfie_landmarks = detect_face_landmarks(selfie)
+    id_landmarks = detect_face_landmarks(id_picture_bytes)
+    elfie_landmarks = detect_face_landmarks(selfie_bytes)      
 
     if id_landmarks is None:
         response = jsonify({"error": "No face detected in ID picture"})
