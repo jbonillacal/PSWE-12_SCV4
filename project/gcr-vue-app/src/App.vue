@@ -20,6 +20,9 @@
         <img v-if="image2" :src="image2" alt="Vista Previa" class="preview" />
       </div>
     </div>
+
+    <button @click="verifyIdentity" :disabled="!image1 || !image2">Verificar Identidad</button>
+    <p v-if="result">Resultado: {{ result }}</p>
   </div>
 </template>
 
@@ -31,21 +34,19 @@ export default {
       image1: null,
       image2: null,
       videoStream: null,
+      result: null
     };
   },
   mounted() {
     this.startCamera();
   },
   methods: {
-    // Manejar la carga de imágenes
     handleFileUpload(event, imageKey) {
       const file = event.target.files[0];
       if (file) {
         this[imageKey] = URL.createObjectURL(file);
       }
     },
-
-    // Iniciar la cámara para capturar imágenes
     async startCamera() {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
@@ -56,8 +57,6 @@ export default {
         }
       }
     },
-
-    // Capturar una imagen desde la webcam
     capturePhoto() {
       const canvas = document.createElement("canvas");
       const video = this.$refs.video;
@@ -65,15 +64,41 @@ export default {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      this.image2 = canvas.toDataURL("image/png"); // Convertir a imagen base64
+      this.image2 = canvas.toDataURL("image/png");
     },
+    async verifyIdentity() {
+      const formData = new FormData();
+      formData.append("id_picture", this.dataURItoBlob(this.image1));
+      formData.append("selfie", this.dataURItoBlob(this.image2));
+      
+      try {
+        const response = await fetch("https://us-central1-cenfotec2024.cloudfunctions.net/gcf-facial-recognition", {
+          method: "POST",
+          body: formData
+        });
+        const data = await response.json();
+        this.result = data.match ? "Las imágenes coinciden" : "Las imágenes no coinciden";
+      } catch (error) {
+        console.error("Error en la verificación:", error);
+        this.result = "Error al verificar identidad";
+      }
+    },
+    dataURItoBlob(dataURI) {
+      const byteString = atob(dataURI.split(",")[1]);
+      const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      return new Blob([ab], { type: mimeString });
+    }
   },
   beforeUnmount() {
-    // Detener la cámara cuando el componente se destruye
     if (this.videoStream) {
       this.videoStream.getTracks().forEach(track => track.stop());
     }
-  },
+  }
 };
 </script>
 
