@@ -1,5 +1,7 @@
-functions-framework==3.*
 google-cloud-vision
+google-cloud-logging
+google-cloud-pubsub
+functions-framework
 flask
 numpy
-google-cloud-logging
+requests
