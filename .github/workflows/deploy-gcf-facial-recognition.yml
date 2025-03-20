@@ -40,6 +40,8 @@ jobs:
             --allow-unauthenticated \
             --region "$GCP_REGION" \
             --memory=1GB \
+            --timeout=540s \
+            --cpu=2 \
             --entry-point verify_identity \
             --source ./project/gcf-facial-recognition/
 
