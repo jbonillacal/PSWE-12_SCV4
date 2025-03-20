@@ -39,9 +39,9 @@ jobs:
             --trigger-http \
             --allow-unauthenticated \
             --region "$GCP_REGION" \
-            --memory=6GB \
+            --memory=8GB \
             --timeout=540s \
-            --cpu=2 \
+            --cpu=4 \
             --entry-point verify_identity \
             --source ./project/gcf-facial-recognition/
 
