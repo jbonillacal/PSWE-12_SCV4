@@ -53,7 +53,7 @@ def compute_similarity(landmarks1, landmarks2):
     points2 = points2[:min_length]
 
     distance = np.linalg.norm(points1 - points2)
-    similarity_score = np.exp(-distance / 50.0)  # Adjust scale for better accuracy
+    similarity_score = np.exp(-distance / 40.0)  # Adjust scale for better accuracy
 
     logging.info(f"Similarity Score: {similarity_score}")
     return similarity_score
@@ -158,7 +158,7 @@ def verify_identity(request):
     logging.info(f"Selfie has {len(selfie_landmarks)} landmarks")
     logging.info(f"Computed Similarity Score: {similarity_score}")
 
-    match = similarity_score > 0.2 
+    match = similarity_score > 0.3 
 
     json_response = call_image_text_extract(id_picture_bytes)
     extracted_text = json_response.get("extracted_text", "")
