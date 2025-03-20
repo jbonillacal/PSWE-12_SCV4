@@ -6,6 +6,7 @@ import re
 import json
 import datetime
 import tempfile
+import os
 from google.cloud import pubsub_v1
 from flask import request, jsonify, make_response
 from deepface import DeepFace
@@ -41,11 +42,25 @@ def compare_faces(id_picture_bytes, selfie_bytes):
 
         logging.info(f"DeepFace result: {result}")
 
-        return result["verified"], result["distance"]
+        # Extract match result
+        match = result["verified"]
+        similarity_score = result["distance"]
+
+        return match, similarity_score
 
     except Exception as e:
         logging.error(f"DeepFace Error: {str(e)}")
         return False, None
+
+    finally:
+        # Cleanup: Remove temp image files
+        try:
+            os.remove(id_picture_path)
+            os.remove(selfie_path)
+            logging.info("Temporary images deleted successfully.")
+        except Exception as cleanup_error:
+            logging.error(f"Error deleting temp files: {cleanup_error}")
+
 
 
 def call_image_text_extract(id_picture_bytes):
