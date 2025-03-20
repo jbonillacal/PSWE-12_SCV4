@@ -72,7 +72,7 @@ def parse_extracted_text(extracted_text, match, similarity_score):
         "match": bool(match),
         "similarityScore": float(similarity_score),
         "requestDate": datetime.datetime.utcnow().isoformat(),  # Current timestamp
-        "companyId": 1  # Static company ID
+        "companyId": "1"  # Static company ID
     }
 
     lines = extracted_text.split("\n")
