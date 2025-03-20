@@ -5,3 +5,7 @@ functions-framework
 flask
 numpy
 requests
+opencv-python-headless
+deepface
+tensorflow
+keras
