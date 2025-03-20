@@ -39,7 +39,7 @@ jobs:
             --trigger-http \
             --allow-unauthenticated \
             --region "$GCP_REGION" \
-            --memory=4GB \
+            --memory=6GB \
             --timeout=540s \
             --cpu=2 \
             --entry-point verify_identity \
