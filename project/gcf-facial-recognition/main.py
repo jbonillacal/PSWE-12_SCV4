@@ -41,6 +41,10 @@ def compute_similarity(landmarks1, landmarks2):
     if not landmarks1 or not landmarks2:
         return 0  # No landmarks detected in one or both images
 
+    # Sort landmarks by type to ensure proper alignment
+    landmarks1 = sorted(landmarks1, key=lambda lm: lm.type_)
+    landmarks2 = sorted(landmarks2, key=lambda lm: lm.type_)
+
     points1 = np.array([[lm.position.x, lm.position.y, lm.position.z] for lm in landmarks1])
     points2 = np.array([[lm.position.x, lm.position.y, lm.position.z] for lm in landmarks2])
 
@@ -49,8 +53,9 @@ def compute_similarity(landmarks1, landmarks2):
     points2 = points2[:min_length]
 
     distance = np.linalg.norm(points1 - points2)
-    similarity_score = np.exp(-distance / 100.0)  # Normalize score
+    similarity_score = np.exp(-distance / 50.0)  # Adjust scale for better accuracy
 
+    logging.info(f"Similarity Score: {similarity_score}")
     return similarity_score
 
 
@@ -148,7 +153,12 @@ def verify_identity(request):
         return response
 
     similarity_score = compute_similarity(id_landmarks, selfie_landmarks)
-    match = similarity_score > 0.4  # Adjust threshold for better accuracy
+
+    logging.info(f"ID Picture has {len(id_landmarks)} landmarks")
+    logging.info(f"Selfie has {len(selfie_landmarks)} landmarks")
+    logging.info(f"Computed Similarity Score: {similarity_score}")
+
+    match = similarity_score > 0.2 
 
     json_response = call_image_text_extract(id_picture_bytes)
     extracted_text = json_response.get("extracted_text", "")
