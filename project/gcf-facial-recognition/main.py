@@ -38,9 +38,11 @@ def compare_faces(id_picture_bytes, selfie_bytes):
         result = DeepFace.verify(img1_path=id_img, img2_path=selfie_img, model_name="VGG-Face")
         logging.info(f"DeepFace result: {result}")
 
-        # Ensure similarity_score is always a number
-        similarity_score = result.get("distance", 1.0)  # Default to 1.0 if missing
-        return result.get("verified", False), similarity_score
+        # Extract match result
+        match = result["verified"]
+        similarity_score = result["distance"]
+
+        return match, similarity_score
 
     except Exception as e:
         logging.error(f"DeepFace Error: {str(e)}")
