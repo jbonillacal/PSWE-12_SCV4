@@ -1,17 +1,13 @@
 import functions_framework
+import numpy as np
 import logging
 import google.cloud.logging
 import requests
 import re
 import json
 import datetime
-import tempfile
-import os
-import cv2
-import numpy as np
-from google.cloud import pubsub_v1
+from google.cloud import vision, pubsub_v1
 from flask import request, jsonify, make_response
-from deepface import DeepFace
 
 # Initialize Google Cloud clients
 client = google.cloud.logging.Client()
@@ -19,39 +15,56 @@ client.setup_logging()
 pubsub_client = pubsub_v1.PublisherClient()
 
 # Define the Pub/Sub topic name
-PROJECT_ID = "cenfotec2024"
+PROJECT_ID = "cenfotec2024"  
 TOPIC_NAME = "facial-recognition-topic"
 TOPIC_PATH = pubsub_client.topic_path(PROJECT_ID, TOPIC_NAME)
 
-# Load DeepFace model once at startup
-DEEPFACE_MODEL = DeepFace.build_model("Facenet")  # Faster model than VGG-Face
 
-def compare_faces(id_picture_bytes, selfie_bytes):
-    """Uses DeepFace to verify if two images belong to the same person."""
-    try:
-        id_img_array = np.asarray(bytearray(id_picture_bytes), dtype=np.uint8)
-        selfie_img_array = np.asarray(bytearray(selfie_bytes), dtype=np.uint8)
+def detect_face_landmarks(image_bytes):
+    """Detects face landmarks and returns their positions using Google Cloud Vision AI."""
+    client = vision.ImageAnnotatorClient()
+    image = vision.Image(content=image_bytes)
+    response = client.face_detection(image=image)
 
-        id_img = cv2.imdecode(id_img_array, cv2.IMREAD_COLOR)
-        selfie_img = cv2.imdecode(selfie_img_array, cv2.IMREAD_COLOR)
+    if response.error.message:
+        raise Exception(f"Cloud Vision AI Error: {response.error.message}")
 
-        result = DeepFace.verify(img1_path=id_img, img2_path=selfie_img, model=DEEPFACE_MODEL)
-        logging.info(f"DeepFace result: {result}")
+    faces = response.face_annotations
+    if not faces or not faces[0].landmarks:
+        return None  # No landmarks detected
 
-        # Ensure similarity_score is always a number
-        similarity_score = result.get("distance", 1.0)  # Default to 1.0 if missing
-        return result.get("verified", False), similarity_score
+    return faces[0].landmarks
 
-    except Exception as e:
-        logging.error(f"DeepFace Error: {str(e)}")
-        return False, 1.0  # Return default similarity_score
+
+def compute_similarity(landmarks1, landmarks2):
+    """Computes Euclidean distance between two sets of facial landmarks."""
+    if not landmarks1 or not landmarks2:
+        return 0  # No landmarks detected in one or both images
+
+    # Sort landmarks by type to ensure proper alignment
+    landmarks1 = sorted(landmarks1, key=lambda lm: lm.type_)
+    landmarks2 = sorted(landmarks2, key=lambda lm: lm.type_)
+
+    points1 = np.array([[lm.position.x, lm.position.y, lm.position.z] for lm in landmarks1])
+    points2 = np.array([[lm.position.x, lm.position.y, lm.position.z] for lm in landmarks2])
+
+    min_length = min(len(points1), len(points2))
+    points1 = points1[:min_length]
+    points2 = points2[:min_length]
+
+    distance = np.linalg.norm(points1 - points2)
+    similarity_score = np.exp(-distance / 50.0)  # Adjust scale for better accuracy
+
+    logging.info(f"Similarity Score: {similarity_score}")
+    return similarity_score
+
 
 def call_image_text_extract(id_picture_bytes):
-    """Calls an external function to extract text from the ID image."""
     url = "https://us-central1-cenfotec2024.cloudfunctions.net/gcf-image-text-extract"
     headers = {"Content-Type": "application/octet-stream"}
     response = requests.post(url, headers=headers, data=id_picture_bytes)
     return response.json()
+
 
 def parse_extracted_text(extracted_text, match, similarity_score):
     """Parses extracted text to generate structured JSON data."""
@@ -62,19 +75,23 @@ def parse_extracted_text(extracted_text, match, similarity_score):
         "lastName1": None,
         "lastName2": None,
         "match": bool(match),
-        "similarityScore": float(similarity_score) if similarity_score is not None else 0.0,  # 🔥 Fix here
-        "requestDate": datetime.datetime.utcnow().isoformat(),
-        "companyId": "1"
+        "similarityScore": float(similarity_score),
+        "requestDate": datetime.datetime.utcnow().isoformat(),  # Current timestamp
+        "companyId": "1"  # Static company ID
     }
 
     lines = extracted_text.split("\n")
+
     for line in lines:
         line = line.strip()
+
         if "REPÚBLICA" in line:
             parsed_data["country"] = line
+
         match_id = re.search(r"\b\d{1} \d{4} \d{4}\b", line)
         if match_id:
             parsed_data["id"] = match_id.group(0)
+
         if line.startswith("Nombre:"):
             parsed_data["name"] = line.replace("Nombre:", "").strip()
         elif line.startswith("1° Apellido:"):
@@ -85,20 +102,19 @@ def parse_extracted_text(extracted_text, match, similarity_score):
     return json.dumps(parsed_data, ensure_ascii=False, indent=4)
 
 
-    return json.dumps(parsed_data, ensure_ascii=False, indent=4)
-
 def publish_to_pubsub(message):
     """Publishes a message to the Pub/Sub topic."""
     try:
         future = pubsub_client.publish(TOPIC_PATH, message.encode("utf-8"))
-        future.result()
+        future.result()  # Wait for completion
         logging.info("Message published successfully to Pub/Sub.")
     except Exception as e:
         logging.error(f"Error publishing to Pub/Sub: {e}")
 
+
 @functions_framework.http
 def verify_identity(request):
-    """Cloud Function to verify if an ID picture and selfie belong to the same person."""
+    """Cloud Function to verify if ID picture and selfie belong to the same person."""
     logging.info("Processing identity verification request")
 
     cors_headers = {
@@ -121,14 +137,32 @@ def verify_identity(request):
     id_picture_bytes = request.files['id_picture'].read()
     selfie_bytes = request.files['selfie'].read()
 
-    # Compare faces using DeepFace
-    match, similarity_score = compare_faces(id_picture_bytes, selfie_bytes)
+    id_landmarks = detect_face_landmarks(id_picture_bytes)
+    selfie_landmarks = detect_face_landmarks(selfie_bytes)
 
-    # Call image text extraction
+    if id_landmarks is None:
+        response = jsonify({"error": "No face detected in ID picture"})
+        response.status_code = 400
+        response.headers.update(cors_headers)
+        return response
+
+    if selfie_landmarks is None:
+        response = jsonify({"error": "No face detected in selfie"})
+        response.status_code = 400
+        response.headers.update(cors_headers)
+        return response
+
+    similarity_score = compute_similarity(id_landmarks, selfie_landmarks)
+
+    logging.info(f"ID Picture has {len(id_landmarks)} landmarks")
+    logging.info(f"Selfie has {len(selfie_landmarks)} landmarks")
+    logging.info(f"Computed Similarity Score: {similarity_score}")
+
+    match = similarity_score > 0.1 
+
     json_response = call_image_text_extract(id_picture_bytes)
     extracted_text = json_response.get("extracted_text", "")
 
-    # Parse extracted text
     json_output = parse_extracted_text(extracted_text, match, similarity_score)
 
     logging.info("JSON Output: %s", json_output)
@@ -144,3 +178,4 @@ def verify_identity(request):
     response.headers.update(cors_headers)
 
     return response
+
