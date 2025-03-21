@@ -24,8 +24,6 @@ PROJECT_ID = "cenfotec2024"
 TOPIC_NAME = "facial-recognition-topic"
 TOPIC_PATH = pubsub_client.topic_path(PROJECT_ID, TOPIC_NAME)
 
-# Load DeepFace model once at startup
-DEEPFACE_MODEL = DeepFace.build_model("Facenet")  # Faster model than VGG-Face
 
 def compare_faces(id_picture_bytes, selfie_bytes):
     """Uses DeepFace to verify if two images belong to the same person."""
@@ -36,7 +34,7 @@ def compare_faces(id_picture_bytes, selfie_bytes):
         id_img = cv2.imdecode(id_img_array, cv2.IMREAD_COLOR)
         selfie_img = cv2.imdecode(selfie_img_array, cv2.IMREAD_COLOR)
 
-        result = DeepFace.verify(img1_path=id_img, img2_path=selfie_img, model=DEEPFACE_MODEL)
+        result = DeepFace.verify(img1_path=id_img, img2_path=selfie_img, model_name="Facenet")
         logging.info(f"DeepFace result: {result}")
 
         # Ensure similarity_score is always a number
