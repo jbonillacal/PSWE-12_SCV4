@@ -1,12 +1,20 @@
-google-cloud-vision
+# Google Cloud dependencies
 google-cloud-logging
 google-cloud-pubsub
-functions-framework
+
+# Flask for HTTP handling
 flask
-numpy
-requests
-opencv-python-headless
+functions-framework
+
+# DeepFace and dependencies
 deepface
-tensorflow==2.12.0  # Downgrade TensorFlow for compatibility
-keras==2.12.0  # Match the TensorFlow version
-tf-keras  # Fixes the missing tf-keras error
+tensorflow==2.12.0
+keras==2.12.0
+tf-keras
+
+# Image processing
+opencv-python-headless
+numpy
+
+# HTTP requests
+requests
