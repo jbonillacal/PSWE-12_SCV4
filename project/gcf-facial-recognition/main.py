@@ -1,4 +1,4 @@
-import functions_framework
+mport functions_framework
 import numpy as np
 import logging
 import google.cloud.logging
@@ -178,4 +178,3 @@ def verify_identity(request):
     response.headers.update(cors_headers)
 
     return response
-
