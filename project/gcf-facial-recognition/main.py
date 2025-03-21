@@ -21,6 +21,8 @@ PROJECT_ID = "cenfotec2024"
 TOPIC_NAME = "facial-recognition-topic"
 TOPIC_PATH = pubsub_client.topic_path(PROJECT_ID, TOPIC_NAME)
 
+# Load model once at startup
+DEEPFACE_MODEL = DeepFace.build_model("VGG-Face")
 
 def save_temp_image(image_bytes):
     """Saves an image from bytes to a temporary file and returns the path."""
@@ -31,36 +33,20 @@ def save_temp_image(image_bytes):
 
 
 def compare_faces(id_picture_bytes, selfie_bytes):
-    """Uses DeepFace to verify if two images belong to the same person."""
     try:
-        # Save images temporarily
         id_picture_path = save_temp_image(id_picture_bytes)
         selfie_path = save_temp_image(selfie_bytes)
 
-        # Run DeepFace verification
-        result = DeepFace.verify(img1_path=id_picture_path, img2_path=selfie_path, model_name="VGG-Face")
+        # Run DeepFace verification using preloaded model
+        result = DeepFace.verify(img1_path=id_picture_path, img2_path=selfie_path, model=DEEPFACE_MODEL)
 
         logging.info(f"DeepFace result: {result}")
 
-        # Extract match result
-        match = result["verified"]
-        similarity_score = result["distance"]
-
-        return match, similarity_score
-
-    except Exception as e:
-        logging.error(f"DeepFace Error: {str(e)}")
-        return False, None
+        return result["verified"], result["distance"]
 
     finally:
-        # Cleanup: Remove temp image files
-        try:
-            os.remove(id_picture_path)
-            os.remove(selfie_path)
-            logging.info("Temporary images deleted successfully.")
-        except Exception as cleanup_error:
-            logging.error(f"Error deleting temp files: {cleanup_error}")
-
+        os.remove(id_picture_path)
+        os.remove(selfie_path)
 
 
 def call_image_text_extract(id_picture_bytes):
