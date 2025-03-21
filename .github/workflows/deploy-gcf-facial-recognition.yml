@@ -39,9 +39,11 @@ jobs:
             --trigger-http \
             --allow-unauthenticated \
             --region "$GCP_REGION" \
-            --memory=8GB \
-            --timeout=540s \
-            --cpu=4 \
+            --memory=4GB \  # Increased memory for DeepFace
+            --cpu=2 \  # More CPU for parallel processing
+            --timeout=540s \  # Longer timeout for large requests
+            --max-instances=10 \  # Auto-scale instances for load handling
             --entry-point verify_identity \
-            --source ./project/gcf-facial-recognition/
+            --source ./project/gcf-facial-recognition/ \
+            --min-instances=1  
 
