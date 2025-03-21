@@ -33,17 +33,17 @@ jobs:
           GCP_REGION: ${{ secrets.GCP_REGION }}
           GCF_FUNCTION_NAME: ${{ secrets.GCF_FUNCTION_NAME }}
         run: |
-          gcloud functions deploy "$GCF_FUNCTION_NAME" \
-            --gen2 \
-            --runtime python310 \
-            --trigger-http \
-            --allow-unauthenticated \
-            --region "$GCP_REGION" \
-            --memory=4GB \
-            --cpu=2 \
-            --timeout=540s \ 
-            --max-instances=10 \ 
-            --entry-point verify_identity \
-            --min-instances=1 \
-            --source ./project/gcf-facial-recognition/ 
+            gcloud functions deploy "$GCF_FUNCTION_NAME" \
+                --gen2 \
+                --runtime python310 \
+                --trigger-http \
+                --allow-unauthenticated \
+                --region "$GCP_REGION" \
+                --memory=4GB \
+                --cpu=2 \
+                --timeout=540s \
+                --max-instances=10 \
+                --entry-point verify_identity \
+                --min-instances=1 \
+                --source ./project/gcf-facial-recognition/
 
