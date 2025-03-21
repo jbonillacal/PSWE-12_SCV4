@@ -25,6 +25,8 @@ TOPIC_NAME = "facial-recognition-topic"
 TOPIC_PATH = pubsub_client.topic_path(PROJECT_ID, TOPIC_NAME)
 
 
+DEEPFACE_MODEL = DeepFace.build_model("Facenet")
+
 def compare_faces(id_picture_bytes, selfie_bytes):
     """Uses DeepFace to verify if two images belong to the same person."""
     try:
