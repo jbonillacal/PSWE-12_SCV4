@@ -41,8 +41,8 @@ jobs:
             --region "$GCP_REGION" \
             --memory=4GB \
             --cpu=2 \
-            --timeout=540s \ # Longer timeout for large requests
-            --max-instances=10 \ # Auto-scale instances
+            --timeout=540s \ 
+            --max-instances=10 \ 
             --entry-point verify_identity \
             --min-instances=1 \
             --source ./project/gcf-facial-recognition/ 
