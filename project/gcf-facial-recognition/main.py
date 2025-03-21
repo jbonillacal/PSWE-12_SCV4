@@ -29,22 +29,22 @@ DEEPFACE_MODEL = DeepFace.build_model("Facenet")  # Faster model than VGG-Face
 def compare_faces(id_picture_bytes, selfie_bytes):
     """Uses DeepFace to verify if two images belong to the same person."""
     try:
-        # Convert image bytes to OpenCV format (without saving temp files)
         id_img_array = np.asarray(bytearray(id_picture_bytes), dtype=np.uint8)
         selfie_img_array = np.asarray(bytearray(selfie_bytes), dtype=np.uint8)
 
         id_img = cv2.imdecode(id_img_array, cv2.IMREAD_COLOR)
         selfie_img = cv2.imdecode(selfie_img_array, cv2.IMREAD_COLOR)
 
-        # Run DeepFace verification
         result = DeepFace.verify(img1_path=id_img, img2_path=selfie_img, model=DEEPFACE_MODEL)
         logging.info(f"DeepFace result: {result}")
 
-        return result["verified"], result["distance"]
+        # Ensure similarity_score is always a number
+        similarity_score = result.get("distance", 1.0)  # Default to 1.0 if missing
+        return result.get("verified", False), similarity_score
 
     except Exception as e:
         logging.error(f"DeepFace Error: {str(e)}")
-        return False, None
+        return False, 1.0  # Return default similarity_score
 
 def call_image_text_extract(id_picture_bytes):
     """Calls an external function to extract text from the ID image."""
@@ -62,29 +62,28 @@ def parse_extracted_text(extracted_text, match, similarity_score):
         "lastName1": None,
         "lastName2": None,
         "match": bool(match),
-        "similarityScore": float(similarity_score),
+        "similarityScore": float(similarity_score) if similarity_score is not None else 0.0,  # 🔥 Fix here
         "requestDate": datetime.datetime.utcnow().isoformat(),
         "companyId": "1"
     }
 
     lines = extracted_text.split("\n")
-
     for line in lines:
         line = line.strip()
-
         if "REPÚBLICA" in line:
             parsed_data["country"] = line
-
         match_id = re.search(r"\b\d{1} \d{4} \d{4}\b", line)
         if match_id:
             parsed_data["id"] = match_id.group(0)
-
         if line.startswith("Nombre:"):
             parsed_data["name"] = line.replace("Nombre:", "").strip()
         elif line.startswith("1° Apellido:"):
             parsed_data["lastName1"] = line.replace("1° Apellido:", "").strip()
         elif line.startswith("2° Apellido:"):
             parsed_data["lastName2"] = line.replace("2° Apellido:", "").strip()
+
+    return json.dumps(parsed_data, ensure_ascii=False, indent=4)
+
 
     return json.dumps(parsed_data, ensure_ascii=False, indent=4)
 
