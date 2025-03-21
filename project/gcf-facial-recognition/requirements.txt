@@ -1,6 +1,7 @@
 # Google Cloud dependencies
 google-cloud-logging
 google-cloud-pubsub
+google-cloud-vision
 
 # Flask for HTTP handling
 flask
