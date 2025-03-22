@@ -12,6 +12,7 @@ import numpy as np
 from google.cloud import pubsub_v1
 from flask import request, jsonify, make_response
 from deepface import DeepFace
+from google.cloud import vision
 
 # Initialize Google Cloud clients
 client = google.cloud.logging.Client()
@@ -23,13 +24,10 @@ PROJECT_ID = "cenfotec2024"
 TOPIC_NAME = "facial-recognition-topic"
 TOPIC_PATH = pubsub_client.topic_path(PROJECT_ID, TOPIC_NAME)
 
-# Load DeepFace model once at startup
-DEEPFACE_MODEL = DeepFace.build_model("Facenet")  # Faster model than VGG-Face
 
 def compare_faces(id_picture_bytes, selfie_bytes):
     """Uses DeepFace to verify if two images belong to the same person."""
     try:
-        # Convert image bytes to OpenCV format (without saving temp files)
         id_img_array = np.asarray(bytearray(id_picture_bytes), dtype=np.uint8)
         selfie_img_array = np.asarray(bytearray(selfie_bytes), dtype=np.uint8)
 
@@ -37,14 +35,18 @@ def compare_faces(id_picture_bytes, selfie_bytes):
         selfie_img = cv2.imdecode(selfie_img_array, cv2.IMREAD_COLOR)
 
         # Run DeepFace verification
-        result = DeepFace.verify(img1_path=id_img, img2_path=selfie_img, model=DEEPFACE_MODEL)
+        result = DeepFace.verify(img1_path=id_img, img2_path=selfie_img, model_name="VGG-Face")
         logging.info(f"DeepFace result: {result}")
 
-        return result["verified"], result["distance"]
+        # Extract match result
+        match = result["verified"]
+        similarity_score = result["distance"]
+
+        return match, similarity_score
 
     except Exception as e:
         logging.error(f"DeepFace Error: {str(e)}")
-        return False, None
+        return False, 1.0  # Return default similarity_score
 
 def call_image_text_extract(id_picture_bytes):
     """Calls an external function to extract text from the ID image."""
@@ -62,7 +64,7 @@ def parse_extracted_text(extracted_text, match, similarity_score):
         "lastName1": None,
         "lastName2": None,
         "match": bool(match),
-        "similarityScore": float(similarity_score),
+        "similarityScore": float(similarity_score) if similarity_score is not None else 0.0,
         "requestDate": datetime.datetime.utcnow().isoformat(),
         "companyId": "1"
     }
