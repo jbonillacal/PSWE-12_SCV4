@@ -13,6 +13,11 @@ from google.cloud import pubsub_v1
 from flask import request, jsonify, make_response
 from deepface import DeepFace
 from google.cloud import vision
+# Preload DeepFace model globally (happens once per container)
+from deepface import DeepFace
+from deepface.basemodels import VGGFace
+
+deepface_model = DeepFace.build_model("VGG-Face")
 
 # Initialize Google Cloud clients
 client = google.cloud.logging.Client()
@@ -24,9 +29,7 @@ PROJECT_ID = "cenfotec2024"
 TOPIC_NAME = "facial-recognition-topic"
 TOPIC_PATH = pubsub_client.topic_path(PROJECT_ID, TOPIC_NAME)
 
-
 def compare_faces(id_picture_bytes, selfie_bytes):
-    """Uses DeepFace to verify if two images belong to the same person."""
     try:
         id_img_array = np.asarray(bytearray(id_picture_bytes), dtype=np.uint8)
         selfie_img_array = np.asarray(bytearray(selfie_bytes), dtype=np.uint8)
@@ -34,19 +37,28 @@ def compare_faces(id_picture_bytes, selfie_bytes):
         id_img = cv2.imdecode(id_img_array, cv2.IMREAD_COLOR)
         selfie_img = cv2.imdecode(selfie_img_array, cv2.IMREAD_COLOR)
 
-        # Run DeepFace verification
-        result = DeepFace.verify(img1_path=id_img, img2_path=selfie_img, model_name="VGG-Face")
-        logging.info(f"DeepFace result: {result}")
+        # Optional: resize to speed up processing
+        id_img = cv2.resize(id_img, (224, 224))
+        selfie_img = cv2.resize(selfie_img, (224, 224))
 
-        # Extract match result
+        result = DeepFace.verify(
+            img1_path=id_img,
+            img2_path=selfie_img,
+            model_name="VGG-Face",
+            model=deepface_model,
+            enforce_detection=False  # optional: avoid failure on detection
+        )
+
         match = result["verified"]
         similarity_score = result["distance"]
 
+        logging.info(f"DeepFace result: {result}")
         return match, similarity_score
 
     except Exception as e:
         logging.error(f"DeepFace Error: {str(e)}")
-        return False, 1.0  # Return default similarity_score
+        return False, 1.0
+
 
 def call_image_text_extract(id_picture_bytes):
     """Calls an external function to extract text from the ID image."""
