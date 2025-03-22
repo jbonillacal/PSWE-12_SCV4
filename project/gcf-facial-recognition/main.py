@@ -44,8 +44,7 @@ def compare_faces(id_picture_bytes, selfie_bytes):
             img1_path=id_img,
             img2_path=selfie_img,
             model_name="VGG-Face",
-            model=deepface_model,
-            enforce_detection=False  # optional: avoid failure on detection
+            enforce_detection=False
         )
 
         match = result["verified"]
