@@ -36,7 +36,7 @@ def compare_faces(id_picture_bytes, selfie_bytes):
 
         # Run DeepFace verification
         result = DeepFace.verify(img1_path=id_img, img2_path=selfie_img, model_name="VGG-Face")
-        logging.info(f"DeepFace result:  {result}")
+        logging.info(f"DeepFace result: {result}")
 
         # Extract match result
         match = result["verified"]
