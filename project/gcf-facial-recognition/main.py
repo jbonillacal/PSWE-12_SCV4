@@ -15,7 +15,6 @@ from deepface import DeepFace
 from google.cloud import vision
 # Preload DeepFace model globally (happens once per container)
 from deepface import DeepFace
-from deepface.basemodels import VGGFace
 
 deepface_model = DeepFace.build_model("VGG-Face")
 
