@@ -4,6 +4,7 @@ FROM node:current-alpine3.20
 RUN npm install -g http-server
 RUN npm install -g @vue/cli-service  
 RUN npm install -g @vue/compiler-sfc
+RUN npm install -g @vueuse/firebase
 
 # hacer la carpeta 'app' el directorio de trabajo actual
 WORKDIR /app

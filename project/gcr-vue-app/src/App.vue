@@ -3,7 +3,22 @@
     <h1>Sube o Captura Imágenes</h1>
     <p>Selecciona dos imágenes o toma una foto desde la segunda caja.</p>
 
-    <div class="form-container">
+    <!-- Botón de inicio de sesión de Google -->
+    <div v-if="!user" class="auth-container">
+      <div id="g_id_onload"
+           data-client_id="25106593702-5jgm5sm4c0s9vcmmc846l073o7ahkb9p.apps.googleusercontent.com"
+           data-callback="handleCredentialResponse">
+      </div>
+      <div class="g_id_signin" data-type="standard"></div>
+    </div>
+
+    <!-- Mostrar el nombre e imagen del usuario autenticado -->
+    <div v-if="user" class="user-info">
+      <p>Bienvenido, {{ user.name }}</p>
+      <img :src="user.picture" alt="Perfil" class="profile-pic"/>
+    </div>
+
+    <div class="form-container" v-if="user">
       <!-- Caja para Subir Imagen 1 -->
       <div class="upload-box">
         <label>Subir Imagen 1:</label>
@@ -21,7 +36,7 @@
       </div>
     </div>
 
-    <button @click="verifyIdentity" :disabled="!image1 || !image2 || isLoading">Verificar Identidad</button>
+    <button v-if="user" @click="verifyIdentity" :disabled="!image1 || !image2 || isLoading">Verificar Identidad</button>
     
     <div v-if="isLoading" class="loading-bar-container">
       <div class="loading-bar"></div>
@@ -44,13 +59,27 @@ export default {
       image2Preview: null,
       videoStream: null,
       result: null,
-      isLoading: false
+      isLoading: false,
+      user: null
     };
   },
-  mounted() {
-    this.startCamera();
-  },
   methods: {
+    loadGoogleSSO() {
+      const script = document.createElement('script');
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      document.head.appendChild(script);
+      window.handleCredentialResponse = this.handleCredentialResponse;
+    },
+    handleCredentialResponse(response) {
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
+      this.user = {
+        name: payload.name,
+        email: payload.email,
+        picture: payload.picture
+      };
+      this.startCamera(); // 🔑 Inicia la cámara después de la autenticación
+    },
     handleFileUpload(event, imageKey) {
       const file = event.target.files[0];
       if (file) {
@@ -110,6 +139,9 @@ export default {
         this.isLoading = false;
       }
     }
+  },
+  mounted() {
+    this.loadGoogleSSO();
   },
   beforeUnmount() {
     if (this.videoStream) {
