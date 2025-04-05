@@ -25,7 +25,7 @@ El sistema que cubrirá esta arquitectura se enfoca en ofrecer un servicio de re
 
 Las principales características incluyen:
 
-Procesamiento de Reconocimiento Facial en Tiempo Real: Respuesta sub-second mediante Cloud Functions configuradas para escalar dinámicamente de acuerdo con la demanda.
+**Procesamiento de Reconocimiento Facial en Tiempo Real**: Respuesta sub-second mediante Cloud Functions configuradas para escalar dinámicamente de acuerdo con la demanda.
 
 **Extracción de Texto desde Imágenes**: Procesamiento de imágenes para extraer información textual relevante mediante Google Cloud AI, especialmente para identificar y extraer información de cédulas de las personas.
 
@@ -36,7 +36,33 @@ Procesamiento de Reconocimiento Facial en Tiempo Real: Respuesta sub-second medi
 El sistema debe ser capaz de manejar múltiples solicitudes concurrentes de manera eficiente, garantizando tiempos de respuesta sub-second incluso bajo cargas elevadas mediante la escalabilidad automática de las Cloud Functions.
 
 ## 1.3. Definiciones, Acrónimos y Abreviaturas
-Proporcionar definiciones para los términos y acrónimos utilizados a lo largo del documento.
+### 1.3.1 Definiciones
+- **Reconocimiento Facial**: Técnica de identificación o verificación de la identidad de un individuo utilizando características biométricas extraídas de su rostro.
+- **DeepFace**: Framework de código abierto basado en aprendizaje profundo (Deep Learning) que proporciona herramientas para análisis facial, incluyendo verificación de identidad, reconocimiento de emociones, edad y género.
+- **Extracción de Texto (OCR)**: Proceso mediante el cual se convierte información textual presente en imágenes a un formato digital legible por máquina.
+- **Google Cloud Pub/Sub**: Servicio de mensajería asíncrona proporcionado por Google Cloud que permite la comunicación entre aplicaciones a través de un modelo Publisher-Subscriber (Publicador-Suscriptor).
+- **Google Cloud Functions**: Plataforma sin servidor que permite la ejecución de funciones en respuesta a eventos, como peticiones HTTP o mensajes de Pub/Sub.
+- **Aprendizaje Profundo (Deep Learning)**: Rama de la Inteligencia Artificial que utiliza redes neuronales profundas para analizar grandes conjuntos de datos y aprender patrones complejos.
+- **Red Neuronal Convolucional (CNN)**: Arquitectura de red neuronal comúnmente utilizada en tareas de visión por computadora como clasificación de imágenes y reconocimiento facial.
+- **Endpoint**: Punto de acceso a un servicio o función expuesta a través de una URL para comunicación o procesamiento de datos.
+- **Pipeline**: Conjunto de procesos secuenciales que transforman y transfieren datos de un estado inicial a uno final.
+- **Microservicio**: Componente independiente que realiza una tarea específica dentro de una arquitectura más grande, comunicándose con otros servicios a través de APIs.
+- **JSON (JavaScript Object Notation)**: Formato ligero de intercambio de datos fácil de leer y escribir para humanos, y fácil de interpretar y generar para máquinas.
+
+### 1.3.2 Acrónimos y Abreviaturas
+- AI: Artificial Intelligence (Inteligencia Artificial)
+- CNN: Convolutional Neural Network (Red Neuronal Convolucional)
+- DL: Deep Learning (Aprendizaje Profundo)
+- OCR: Optical Character Recognition (Reconocimiento Óptico de Caracteres)
+- API: Application Programming Interface (Interfaz de Programación de Aplicaciones)
+- GCP: Google Cloud Platform
+- HTTP: HyperText Transfer Protocol (Protocolo de Transferencia de Hipertexto)
+- JSON: JavaScript Object Notation
+- Pub/Sub: Publisher-Subscriber (Publicador-Suscriptor)
+- ML: Machine Learning (Aprendizaje Automático)
+- ID: Identification (Identificación)
+- URL: Uniform Resource Locator (Localizador Uniforme de Recursos)
+- REST: Representational State Transfer (Transferencia de Estado Representacional)
 
 ## 1.4. Referencias
 Enumerar otros documentos, sitios web o materiales referenciados en este documento.
@@ -45,8 +71,41 @@ Enumerar otros documentos, sitios web o materiales referenciados en este documen
 Proporcionar un breve resumen de las secciones siguientes del documento.
 
 # 2. Representación Arquitectónica 
-## 2.1.Estilo Arquitectónico y Justificación
-Describir el estilo(s) arquitectónico(s) que guía el diseño (por ejemplo, microservicios, monolítico, etc.) y la justificación para su elección.
+## 2.1.Estilo Arquitectónico
+
+El sistema implementa un estilo arquitectónico Basado en Microservicios Serverless desplegado principalmente en Google Cloud Platform (GCP). Cada componente del sistema es independiente y ejecuta una función específica, comunicándose a través de eventos y mensajes asincrónicos mediante Pub/Sub.
+
+En este tipo de arquitectura, los servicios no están activos permanentemente, sino que se activan en respuesta a eventos específicos (ej. solicitudes de autenticación facial). Este modelo se integra de manera fluida con un ecosistema sin servidor (serverless), permitiendo escalabilidad automática y pago basado en uso real.
+
+## 2.2 Justificación del Uso del Estilo Arquitectónico
+**Modularidad y Escalabilidad:**
+
+La arquitectura basada en microservicios permite que cada componente (Cloud Functions, Cloud Run, BigQuery, Cloud Vision AI, DeepFace) sea independiente, facilitando el desarrollo, despliegue y escalado individual.
+En caso de un incremento de solicitudes de autenticación facial, los componentes involucrados pueden escalar automáticamente sin afectar otros servicios.
+
+**Eficiencia de Costos:**
+
+Serverless Computing ofrece un modelo de pago por uso real. Específicamente:
+**Cloud Functions y Cloud Run:** Solo generan costos cuando se ejecutan, lo cual es ideal para procesos que se disparan por eventos o solicitudes (como las solicitudes de autenticación facial).
+
+**BigQuery:** 
+Facturado por consulta y almacenamiento, lo cual permite optimizar costos almacenando solo la información necesaria y accediéndola bajo demanda.
+
+**Pub/Sub:** 
+Bajo costo y eficiente para sistemas basados en eventos y comunicación asíncrona.
+La naturaleza event-driven (basada en eventos) permite que el sistema permanezca inactivo cuando no hay solicitudes, eliminando costos de infraestructura asociados a servicios en constante ejecución.
+
+**Elasticidad y Escalabilidad Automática:**
+Google Cloud Functions y Cloud Run pueden escalar desde cero hasta miles de instancias automáticamente, respondiendo a la demanda sin necesidad de intervención manual o planificación previa.
+Esto es crucial dado que la autenticación facial no es un proceso constante sino que responde a solicitudes esporádicas.
+
+**Despliegue Simplificado y Alta Disponibilidad:**
+Los servicios sin servidor proporcionan alta disponibilidad automáticamente, distribuyendo la carga y mejorando la tolerancia a fallos.
+Este enfoque simplifica el despliegue continuo y la integración de nuevas funcionalidades sin afectar la operación de componentes ya existentes.
+
+**Reducción de Costos de Mantenimiento:**
+Al no gestionar servidores o infraestructura, se reduce significativamente el costo operativo y de mantenimiento.
+Todo el monitoreo, actualización de parches de seguridad y escalabilidad son manejados automáticamente por Google Cloud.
 
 # 3. Partes Interesadas y Preocupaciones del Sistema
 ## 3.1. Partes Interesadas
