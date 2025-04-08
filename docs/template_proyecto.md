@@ -109,28 +109,110 @@ Todo el monitoreo, actualización de parches de seguridad y escalabilidad son ma
 
 # 3. Partes Interesadas y Preocupaciones del Sistema
 ## 3.1. Partes Interesadas
-Enumerar las partes interesadas del sistema y sus intereses/preocupaciones.
+
+| Parte interesada           | Rol / Relación con el sistema                                       | Intereses / Preocupaciones clave |
+|----------------------------|---------------------------------------------------------------------|---------------------------------------------------------------|
+| **Usuarios finales**       | Personas que usan el sistema para validar su identidad.             | - Facilidad de uso  - Tiempo de respuesta rápido  - Privacidad y seguridad de sus imágenes - Confiabilidad del resultado |
+| **Equipo de desarrollo**   | Encargados del diseño, desarrollo y mantenimiento del sistema.      | - Simplicidad y claridad de la arquitectura - Mantenibilidad del código - Facilidad para pruebas y despliegue |
+| **Administradores del sistema** | Supervisa el comportamiento del sistema y los resultados de validación. | - Acceso a resultados de procesamiento - Trazabilidad de errores - Posibilidad de diagnóstico ante fallos |
+| **Equipo de seguridad**    | Responsable de garantizar que el sistema cumpla con buenas prácticas de seguridad. | - Protección de los datos sensibles - Control de acceso a los recursos - Minimización del almacenamiento de datos |
+| **Stakeholders de negocio**| Responsables de la viabilidad y sostenibilidad del sistema.         | - Bajo costo operativo - Escalabilidad del sistema - Tiempo de implementación rápido - Cumplimiento de objetivos funcionales |
+| **Proveedor de infraestructura (GCP)** | Plataforma que ejecuta el sistema y provee los servicios gestionados. | - Uso correcto y eficiente de los recursos - Seguridad en la configuración de los servicios - Disponibilidad del entorno |
+
 
 ## 3.2. Preocupaciones del Sistema
-Describir las preocupaciones del sistema, como rendimiento, escalabilidad y seguridad.
 
-# 4. Visión General del Sistema 
-## 4.1.	Descripción de Alto Nivel
-Proporcionar una descripción de alto nivel de la funcionalidad y los componentes del sistema.
+| Categoría           | Preocupación del Sistema                                                        | Estrategia de Mitigación Propuesta                                     |
+|---------------------|----------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| **Rendimiento**     | El sistema debe validar identidades en tiempo razonable, sin demoras perceptibles para el usuario. | Uso de funciones *serverless* (Cloud Functions) con procesamiento concurrente. Se espera < 3 segundos en el 95% de los casos. |
+| **Escalabilidad**   | El sistema debe manejar picos de demanda sin degradación del servicio.          | Arquitectura basada en eventos y componentes *serverless* que escalan automáticamente (Cloud Functions, Pub/Sub). |
+| **Seguridad**       | Protección de imágenes personales y datos sensibles durante el almacenamiento y procesamiento. | Uso de **Cloud Storage buckets privados**, encriptación en tránsito y en reposo, y acceso controlado mediante IAM. |
+| **Privacidad**      | Protección de la identidad del usuario final.                                   | Eliminación automática de imágenes después de 24h, almacenamiento temporal, y cumplimiento con principios de minimización de datos. |
+| **Costo**           | Optimización del uso de recursos para evitar costos innecesarios.               | Pago por uso con servicios *serverless* (solo se incurre en costos cuando hay actividad). No hay servidores siempre encendidos. |
+| **Mantenibilidad**  | Facilidad para actualizar o extender el sistema sin afectar a los usuarios.     | Componentes desacoplados mediante Pub/Sub. Código modular en Python con funciones independientes. |
+| **Auditoría y trazabilidad** | Posibilidad de auditar el flujo de validaciones, identificar errores o abusos. | Firestore guarda los eventos de validación. Todos los pasos clave se registran con timestamps. |
+| **Disponibilidad**  | El sistema debe estar disponible 24/7, incluso ante fallos parciales.           | Infraestructura distribuida en GCP, servicios de alta disponibilidad y escalabilidad automática. |
+
+# 4. Visión General del Sistema
+
+## 4.1. Descripción de Alto Nivel
+
+El sistema de **Validación de Identidad con Reconocimiento Facial** es una solución *serverless* desarrollada sobre Google Cloud Platform (GCP) que permite verificar la identidad de una persona comparando una selfie con una imagen de su documento de identidad.
+
+La solución está diseñada para ser **escalable**, **segura** y **eficiente**, eliminando la necesidad de servidores dedicados y aprovechando servicios gestionados que se activan bajo demanda. Está compuesta por varios módulos funcionales que trabajan en conjunto para realizar las siguientes tareas:
+
+### Funcionalidades principales:
+
+- **Carga de imágenes:** El usuario sube dos imágenes: una de su documento de identidad y otra de su rostro (selfie).
+- **Extracción de datos del documento:** A través de Google Vision AI (OCR), se extraen el texto y la fotografía del documento.
+- **Comparación biométrica:** Se compara la imagen del documento con la selfie utilizando detección facial.
+- **Determinación del resultado:** Se determina si la identidad es válida en base a un umbral de coincidencia facial.
+- **Notificación al usuario:** Se notifica al usuario con el resultado de la validación.
+- **Almacenamiento y trazabilidad:** Se guarda el resultado de la validación para auditoría y análisis posteriores.
+
+### Componentes clave del sistema:
+
+| Componente                     | Descripción                                                                 |
+|--------------------------------|-----------------------------------------------------------------------------|
+| **Google Cloud Storage (GCS)** | Almacena temporalmente las imágenes subidas por los usuarios.              |
+| **Cloud Functions (Python)**   | Procesan cada etapa del flujo: carga, extracción OCR, comparación facial, etc. |
+| **Google Vision AI**           | API que permite extraer texto y realizar detección facial en las imágenes. |
+| **Cloud Pub/Sub**              | Facilita la comunicación asíncrona entre funciones para enviar notificaciones. |
+| **Big Query**                  | Almacenamiento de registros de validación para análisis histórico.      |
+
+Este enfoque modular permite que el sistema se adapte fácilmente a cambios o mejoras, manteniendo bajo control los costos operativos y asegurando un rendimiento óptimo.
 
 # 5. Estrategias Arquitectónicas
+
 ## 5.1. Estrategias Clave
-Describir las estrategias arquitectónicas clave y cómo abordan las preocupaciones específicas de las partes interesadas.
+
+Las siguientes estrategias arquitectónicas se han definido para abordar de forma efectiva las preocupaciones de las partes interesadas, garantizando que el sistema sea escalable, seguro, eficiente y fácil de mantener:
+
+### 1. **Arquitectura Serverless basada en eventos**
+- Se utiliza Google Cloud Functions para construir un sistema reactivo y desacoplado.
+- Las funciones se activan en respuesta a eventos (como la subida de una imagen o la finalización del procesamiento).
+- **Preocupaciones abordadas**: escalabilidad, costos, rendimiento, mantenibilidad.
+
+### 2. **Desacoplamiento mediante Cloud Pub/Sub**
+- Se emplea Cloud Pub/Sub para comunicar funciones asíncronamente sin acoplamiento directo entre ellas.
+- Esto permite escalar, distribuir carga y realizar tareas como el envío de notificaciones de forma independiente.
+- **Preocupaciones abordadas**: escalabilidad, resiliencia, extensibilidad.
+
+### 3. **Procesamiento inteligente con Google Vision AI y DeepFace**
+- Se utiliza Google Vision AI para realizar OCR y detectar rostros en imágenes de documentos.
+- Para la comparación facial entre la selfie y la imagen del documento, se emplea la librería DeepFace, que facilita la implementación de reconocimiento facial sin necesidad de construir modelos desde cero.
+- Esta combinación permite integrar capacidades avanzadas de visión por computadora con simplicidad y rapidez de desarrollo.
+- **Preocupaciones abordadas**: precisión de resultados, rendimiento, mantenimiento.
+
+### 4. **No almacenamiento persistente de las imágenes en base de datos**
+- Las imágenes subidas por los usuarios (documento y selfie) tienen un ciclo de vida muy corto: se procesan de inmediato y luego se eliminan.
+- Evitar el almacenamiento permanente de imágenes o resultados ayuda a minimizar el riesgo de exposición de datos sensibles, alineándose con los principios de privacidad desde el diseño (privacy by design).
+- Al eliminar componentes de almacenamiento persistente, se reducen los costos operativos y se eliminan dependencias adicionales.
+- **Preocupaciones abordadas**: seguridad, privacidad, cumplimiento de normativas.
+
+### 5. **Minimización del costo operativo**
+- La arquitectura está basada en servicios gestionados y pago por uso.
+- Se evita el aprovisionamiento de infraestructura o mantenimiento de servidores.
+- **Preocupaciones abordadas**: eficiencia operativa, costos de infraestructura.
+
+### 6. **Separación de responsabilidades y modularidad**
+- Cada función realiza una tarea específica (subida, OCR, comparación, notificación).
+- Se sigue el principio de responsabilidad única (SRP) para facilitar la mantenibilidad.
+- **Preocupaciones abordadas**: mantenibilidad, extensibilidad, facilidad de pruebas.
 
 # 6. Arquitectura del Sistema
 ## 6.1. Resumen de Capas/Módulos
 Proporcionar un resumen de las capas o módulos del sistema.
 
 ## 6.2 Diagramas de Componentes
-Incluir cualquier diagrama de componentes relevante que ilustre partes significativas del sistema.
+### 6.2.1 Vista general del sistema
+![Vista general del sistema](diags/system-context-structurizr.png)
+
+### 6.2.2 Vista detallada del sistema
+![Vista detallada del sistema](diags/container-structurizr.png)
 
 ## 6.3 Diseño de la Base de Datos
-Incluir el diseño y la estructura de la base de datos.
+No se utilizó una base de datos en el sistema ya que las imágenes y los resultados de validación se procesan de forma inmediata y no requieren persistencia. Esta decisión reduce la complejidad arquitectónica, minimiza los costos operativos y refuerza la privacidad del usuario al evitar el almacenamiento de datos sensibles. El enfoque se alinea con el modelo serverless y con principios de seguridad como la minimización de datos, ya que toda la información se maneja de manera efímera y se elimina una vez finalizado el procesamiento.
 
 # 7. Decisiones Arquitectónicas Clave 
 ## 7.1. Registro de Decisiones
@@ -162,8 +244,8 @@ Enumerar los riesgos identificados y su posible impacto en el proyecto.
 Describir cualquier área de deuda técnica y los planes para su resolución.
 
 # 10. Apéndices 
-##10.1. Glosario
-Proporcionar un glosario de términos utilizados a lo largo del documento.
+## 10.1. Glosario
+Ver sección _1.3. Definiciones, Acrónimos y Abreviaturas_.
 
 ## 10.2. Índice
 Incluir un índice de términos y secciones para facilitar la navegación.
