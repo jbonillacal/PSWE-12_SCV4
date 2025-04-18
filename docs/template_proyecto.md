@@ -216,32 +216,278 @@ No se utilizó una base de datos en el sistema ya que las imágenes y los result
 
 # 7. Decisiones Arquitectónicas Clave 
 ## 7.1. Registro de Decisiones
-Registrar las decisiones arquitectónicas clave tomadas y la justificación detrás de ellas:
-### 7.1.1 Pros y Contras.
-### 7.1.2 Alternativas y balance de factores.
-### 7.1.3 Problemas potenciales.
-### 7.1.4 Dependencias a considerar.
+A continuación, se documentan las decisiones arquitectónicas más relevantes tomadas durante el diseño del sistema, junto con su justificación técnica y estratégica:
 
+| ID     | Decisión Arquitectónica                                                                 | Justificación                                                                                                                                                 | Fecha       |
+|--------|------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|
+| AD-001 | Uso de **Google Cloud Functions** para los servicios de reconocimiento facial y extracción de texto. | Enfoque *serverless* para reducir costos operativos, facilitar el mantenimiento y escalar automáticamente.                                                    | 2025-03-01  |
+| AD-002 | Integración con **DeepFace** para la verificación de identidad.                          | DeepFace ofrece un modelo preentrenado con alta precisión para verificación facial sin necesidad de entrenamiento personalizado.                              | 2025-03-03  |
+| AD-003 | Utilización de **Cloud Vision AI** para extracción de texto desde documentos.            | Vision AI permite obtener resultados OCR precisos para validar documentos como identificaciones.                                                              | 2025-03-05  |
+| AD-004 | Publicación de eventos en **Google Pub/Sub** para desacoplar el procesamiento posterior. | Pub/Sub permite comunicación asincrónica, escalabilidad y tolerancia a fallos entre funciones y otros componentes.                                            | 2025-03-07  |
+| AD-005 | Almacenamiento de resultados en **BigQuery** como base de datos analítica principal.     | BigQuery facilita análisis de grandes volúmenes de datos para auditoría y métricas por compañía.                                                              | 2025-03-08  |
+| AD-006 | Exposición de funciones mediante **HTTPS por defecto**, sin servidores intermedios.      | Cloud Functions y Cloud Run en GCP usan TLS por defecto, cumpliendo requisitos de seguridad sin configuración adicional.                                       | 2025-03-10  |
+### 7.1.1 Pros y Contras
+
+En esta sección se analizan los principales beneficios y desafíos asociados a las decisiones arquitectónicas adoptadas en el diseño del sistema. Esta evaluación permite comprender los compromisos asumidos y las implicaciones técnicas, operativas y económicas del enfoque seleccionado.
+
+#### Principales Ventajas (Pros)
+
+- **Escalabilidad automática:** La adopción de componentes *serverless* como Cloud Functions y Cloud Run permite escalar de forma automática en función de la demanda, sin necesidad de administrar servidores.
+- **Reducción de costos operativos:** Al pagar únicamente por el uso efectivo de los recursos, se optimiza el presupuesto, especialmente en escenarios de baja frecuencia de uso.
+- **Desacoplamiento entre componentes:** El uso de Pub/Sub como middleware de eventos facilita la independencia entre funciones, favoreciendo el mantenimiento y la evolución de cada servicio de forma aislada.
+- **Precisión en el reconocimiento facial:** DeepFace proporciona modelos robustos de verificación con alta confiabilidad, acelerando el desarrollo al evitar el entrenamiento desde cero.
+- **Capacidades analíticas avanzadas:** BigQuery permite realizar análisis de grandes volúmenes de datos para obtener métricas detalladas por compañía y auditoría de eventos.
+
+#### Principales Desventajas (Contras)
+
+- **Tiempo de arranque en frío (cold start):** Las funciones serverless pueden experimentar ligeras demoras al iniciar cuando no han sido invocadas recientemente, afectando la experiencia en casos de baja latencia esperada.
+- **Complejidad distribuida:** La separación funcional en múltiples servicios requiere mayor atención en la trazabilidad, monitoreo y manejo de errores.
+- **Dependencia del ecosistema GCP:** La solución está altamente acoplada a servicios gestionados de Google, lo que puede limitar la portabilidad hacia otras nubes
+
+
+### 7.1.2 Alternativas y Balance de Factores
+
+Durante el proceso de definición arquitectónica, se consideraron diversas alternativas tecnológicas y de diseño que podrían haber satisfecho los requerimientos funcionales y no funcionales del sistema. A continuación, se detallan algunas de estas alternativas, junto con los factores que influyeron en la elección final.
+
+#### Alternativas Evaluadas
+
+- **Contenedores gestionados en GKE (Google Kubernetes Engine):**
+  - *Ventaja:* Mayor control sobre los entornos de ejecución y configuración detallada del escalado.
+  - *Desventaja:* Mayor complejidad operativa, necesidad de administración de clústeres y supervisión continua.
+
+- **Uso de App Engine en lugar de Cloud Functions:**
+  - *Ventaja:* Plataforma gestionada con soporte para aplicaciones web y backend completos.
+  - *Desventaja:* Menor granularidad en la facturación y escalado más orientado a aplicaciones monolíticas.
+
+- **Modelos personalizados de reconocimiento facial en Vertex AI:**
+  - *Ventaja:* Posibilidad de entrenar modelos adaptados al dominio específico y mejorar la precisión.
+  - *Desventaja:* Requiere dataset etiquetado, experiencia en ML, mayor tiempo de desarrollo y costos de entrenamiento.
+
+- **Base de datos relacional en Cloud SQL en lugar de BigQuery:**
+  - *Ventaja:* Mejor soporte para transacciones y consistencia fuerte.
+  - *Desventaja:* Escalabilidad limitada y menor eficiencia en consultas analíticas sobre grandes volúmenes de datos.
+
+#### Balance de Factores
+
+La elección final se inclinó hacia una arquitectura basada en **componentes serverless desacoplados**, priorizando los siguientes factores:
+
+- **Escalabilidad dinámica:** Uso de servicios que escalan automáticamente bajo demanda.
+- **Simplicidad operativa:** Reducción de la carga de mantenimiento al eliminar la gestión de infraestructura.
+- **Costo por uso:** Optimización presupuestaria al pagar solo por ejecución y almacenamiento consumido.
+- **Velocidad de implementación:** Uso de servicios gestionados y bibliotecas preentrenadas que aceleran el desarrollo.
+- **Cumplimiento de requisitos funcionales:** Satisfacción de necesidades específicas como verificación facial, OCR y registro por compañía.
+
+Esta evaluación de alternativas permitió adoptar una solución equilibrada entre eficiencia técnica, mantenibilidad y control de costos.
+
+### 7.1.3 Problemas Potenciales
+
+Si bien la arquitectura adoptada ofrece múltiples beneficios en términos de escalabilidad, flexibilidad y costo, también existen riesgos y limitaciones inherentes al enfoque seleccionado. A continuación, se describen los problemas potenciales identificados que podrían afectar el rendimiento, la disponibilidad o la evolución del sistema:
+
+#### 1. Latencia por arranque en frío (Cold Start)
+Las funciones serverless, como Cloud Functions, pueden experimentar una latencia adicional cuando no han sido invocadas recientemente. Esto podría afectar la experiencia del usuario en escenarios donde se espera una respuesta inmediata.
+
+#### 2. Complejidad en el monitoreo y trazabilidad
+La naturaleza distribuida del sistema, con múltiples funciones y servicios desacoplados, puede dificultar la trazabilidad de errores y el análisis de logs. Es necesario implementar herramientas de observabilidad robustas como Cloud Logging, Cloud Trace y Cloud Monitoring.
+
+#### 3. Límite en el tiempo de ejecución de funciones
+Cloud Functions impone restricciones de tiempo (por ejemplo, 540 segundos en funciones HTTP), lo que podría ser un problema en escenarios donde el análisis facial o el procesamiento de imágenes sea más intensivo de lo previsto.
+
+#### 4. Dependencia del ecosistema Google Cloud
+El sistema está estrechamente ligado a servicios gestionados de GCP. Esto limita la portabilidad hacia otras plataformas cloud o entornos on-premise, generando una dependencia tecnológica (vendor lock-in).
+
+#### 5. Gestión de versiones y despliegue simultáneo
+Las actualizaciones simultáneas de múltiples funciones o servicios podrían generar inconsistencias si no se controla correctamente el versionado, especialmente en un entorno altamente desacoplado.
+
+#### 6. Escalabilidad descontrolada
+Aunque la escalabilidad automática es una ventaja clave, también puede llevar a un consumo inesperado de recursos y costos si no se implementan mecanismos adecuados de control, como límites de concurrencia o alertas presupuestarias.
+
+
+Es fundamental anticiparse a estos problemas potenciales mediante una planificación adecuada, la implementación de buenas prácticas de DevOps y la adopción de mecanismos de resiliencia y monitoreo proactivo.
+
+### 7.1.4 Dependencias a Considerar
+
+El correcto funcionamiento del sistema de reconocimiento facial depende de una serie de servicios, bibliotecas y configuraciones externas que deben ser gestionadas y monitoreadas cuidadosamente. A continuación se detallan las principales dependencias técnicas a considerar:
+
+#### 1. Servicios de Google Cloud Platform (GCP)
+
+- **Cloud Functions:** Ejecución de lógica de reconocimiento facial y extracción de texto. Su disponibilidad y rendimiento son críticos para el sistema.
+- **Cloud Vision AI:** Servicio de OCR utilizado para extraer texto de documentos de identidad. Cualquier cambio en su API o en sus políticas de uso afectaría directamente esta funcionalidad.
+- **Cloud Pub/Sub:** Mecanismo de mensajería utilizado para desacoplar componentes. Su correcta configuración garantiza la entrega de eventos entre funciones.
+- **BigQuery:** Almacenamiento y análisis de datos transaccionales por compañía. Depende de esquemas bien definidos y control de costos por uso de consultas.
+- **Cloud Run (opcional):** Si se utiliza para exponer la interfaz de autenticación, debe contar con configuración adecuada de recursos, escalado y seguridad.
+
+#### 2. Bibliotecas y Frameworks
+
+- **DeepFace:** Biblioteca de Python para verificación facial. Su compatibilidad con futuras versiones de Python o dependencias de OpenCV debe monitorearse activamente.
+- **OpenCV y NumPy:** Utilizados para procesamiento de imágenes. Son componentes esenciales en el preprocesamiento de datos visuales.
+- **Flask / Functions Framework:** Framework de desarrollo para exponer endpoints HTTP. Cambios en sus versiones podrían afectar el comportamiento del backend.
+
+#### 3. Configuraciones de Seguridad e IAM
+
+- **Cuentas de servicio (Service Accounts):** Cada función debe tener asignado el rol mínimo necesario para interactuar con los recursos de GCP.
+- **HTTPS y políticas CORS:** Deben garantizarse para la protección de datos sensibles transmitidos entre cliente y backend.
+
+#### 4. Entorno de Ejecución
+
+- **Versión de Python soportada por Cloud Functions:** La biblioteca DeepFace y otros módulos deben ser compatibles con la versión de Python configurada en el entorno de ejecución.
+- **Cuotas y límites de GCP:** Es necesario supervisar los límites de ejecución, almacenamiento y concurrencia para evitar interrupciones del servicio.
+
+
+Estas dependencias deben ser revisadas periódicamente y gestionadas mediante herramientas de automatización, validación de versiones y monitoreo continuo para asegurar la estabilidad y evolución del sistema.
 
 # 8. Atributos de Calidad 
 ## 8.1. Rendimiento
-Describir los requisitos de rendimiento y cómo la arquitectura los respalda.
+### Requisitos de rendimiento
+
+- **Tiempo máximo de respuesta:** El sistema debe procesar la verificación facial (recepción de imágenes, análisis con DeepFace y validación de identidad) en menos de 2 segundos en el 95% de los casos.
+- **Tiempo máximo de extracción de texto:** El OCR de la identificación debe ejecutarse en menos de 1 segundo.
+- **Concurrencia esperada:** El sistema debe manejar hasta 500 solicitudes simultáneas en horas pico sin degradar el rendimiento.
+- **Tolerancia al arranque en frío:** Las funciones críticas deben minimizar el impacto del cold start mediante estrategias como precalentamiento o instancias mínimas en Cloud Run.
+
+### Soporte desde la arquitectura
+
+La arquitectura propuesta respalda estos requisitos de rendimiento mediante las siguientes decisiones:
+
+- **Asignación de recursos generosos por función:** Cada Cloud Function está configurada con **8 GB de memoria y 2 CPUs**, optimizando el procesamiento intensivo de imágenes requerido por DeepFace y Vision AI.
+- **Escalado controlado por concurrencia:** Las funciones están limitadas a **un máximo de 10 instancias simultáneas**, lo cual permite controlar el uso de recursos y evitar un escalado descontrolado que pueda afectar la estabilidad del sistema o generar costos inesperados.
+- **Separación de responsabilidades:** La arquitectura desacopla la extracción de texto y la verificación facial en funciones independientes, permitiendo ejecución paralela y evitando cuellos de botella.
+- **Procesamiento asincrónico con Pub/Sub:** Las tareas no críticas se gestionan mediante mensajería, lo que reduce la carga en el flujo de autenticación.
+- **Almacenamiento en BigQuery fuera del tiempo real:** Las inserciones de datos analíticos se procesan fuera del flujo principal, minimizando la latencia percibida por el usuario.
+- **Despliegue geolocalizado:** Las funciones se alojan en regiones de GCP cercanas a los usuarios objetivo del banco para reducir la latencia de red.
+
+Gracias a esta configuración, el sistema está diseñado para cumplir con los exigentes niveles de rendimiento requeridos por instituciones financieras, garantizando autenticaciones seguras y ágiles para cada transacción crítica.
+
 
 ## 8.2. Escalabilidad
-Describir las consideraciones y estrategias de escalabilidad.
+
+### Escenario hipotético
+
+Nuestra arquitectura pretende abarcar sistemas de seguridad financieros y planea ampliar progresivamente el uso del sistema de autenticación facial, pasando de un piloto interno a una implementación a nivel nacional para todos los usuarios de banca en línea y móvil. Esto implica una proyección de crecimiento de usuarios activos desde 5.000 hasta más de 100.000 en un plazo de 12 meses, con picos de actividad en horarios bancarios y durante fechas de alto volumen transaccional (como quincenas o pagos de impuestos).
+
+### Consideraciones de escalabilidad
+
+- **Crecimiento en número de usuarios:** El sistema debe poder atender un aumento sostenido y abrupto de usuarios sin reconfiguraciones mayores.
+- **Carga variable según horarios:** Se espera una distribución de carga desigual, con horas pico que exigen mayor capacidad de procesamiento.
+- **Escalado por función:** Cada componente debe escalar independientemente según su demanda específica (por ejemplo, verificación facial vs. extracción de texto).
+- **Control presupuestario:** La escalabilidad debe estar balanceada con límites que eviten costos descontrolados por autoescalado excesivo.
+
+### Estrategias de escalabilidad implementadas
+
+- **Arquitectura basada en funciones serverless:** Cloud Functions y Cloud Run permiten escalar horizontalmente de forma automática según la demanda, sin necesidad de aprovisionar infraestructura de antemano.
+- **Configuración de escalado controlado:** Se ha definido un límite de **10 instancias simultáneas por función**, lo cual brinda un punto de control sobre la escalabilidad y los costos. Esta configuración puede ajustarse según el comportamiento observado en producción.
+- **Separación de cargas críticas y no críticas:** Las operaciones no esenciales (como almacenamiento en BigQuery) se gestionan asincrónicamente con Pub/Sub, permitiendo priorizar los recursos para las funciones de autenticación en tiempo real.
+- **Paralelismo entre funciones desacopladas:** Al dividir los procesos en funciones independientes (OCR, verificación facial, logging), se facilita el escalado independiente por carga.
+- **Monitoreo y alertamiento proactivo:** Se utilizan herramientas como Cloud Monitoring y Cloud Logging para observar métricas clave y escalar de manera anticipada ante tendencias de alta demanda.
+
+---
+
+Gracias a estas estrategias, el sistema está preparado para escalar de manera controlada y eficiente, adaptándose a las necesidades cambiantes del merdado financiero sin comprometer la disponibilidad ni el rendimiento, y manteniendo el control sobre el consumo de recursos y costos operativos.
+
 
 ## 8.3. Seguridad
-Describir las medidas de seguridad y consideraciones dentro de la arquitectura.
+
+Dado que el sistema es pretende ser utilizado para autenticar transacciones bancarias de alto valor, la arquitectura debe cumplir con estrictos requisitos de seguridad para proteger los datos biométricos y personales de los usuarios, así como garantizar que los accesos a los servicios estén debidamente controlados y auditados.
+
+### Medidas de seguridad implementadas
+
+#### 1. Autenticación y autorización mediante OAuth 2.0
+
+Las Cloud Functions están configuradas para aceptar únicamente solicitudes autenticadas y autorizadas a través del protocolo **OAuth 2.0** de Google. Esto permite que solo usuarios o servicios previamente autorizados puedan acceder a los endpoints expuestos, reduciendo significativamente el riesgo de accesos no autorizados.
+
+#### 2. Restricción de acceso mediante VPCs privadas
+
+Todas las funciones críticas del sistema están desplegadas dentro de **redes privadas (VPCs)** de Google Cloud. Esto significa que no son accesibles públicamente por defecto, y que solo los servicios y aplicaciones explícitamente habilitados dentro del mismo entorno de red pueden comunicarse con ellas. Esta medida mitiga ataques de tipo externo y evita exposición innecesaria de la lógica sensible del sistema.
+
+#### 3. Cifrado en tránsito con HTTPS
+
+La comunicación entre clientes (por ejemplo, la app móvil del banco) y las Cloud Functions se realiza exclusivamente sobre **HTTPS**, que es el protocolo por defecto en los servicios serverless de Google. Esto garantiza que todos los datos —incluyendo imágenes biométricas y resultados de autenticación— estén **cifrados en tránsito**, protegiendo la integridad y confidencialidad frente a ataques de intermediarios (Man-in-the-Middle).
+
+#### 4. Principio de mínimo privilegio
+
+Cada función cuenta con una cuenta de servicio independiente y **roles de IAM específicos y restringidos**. Esto asegura que cada componente del sistema tenga acceso únicamente a los recursos estrictamente necesarios, evitando escalamiento de privilegios y mejorando la auditabilidad.
+
+#### 5. Auditoría y trazabilidad
+
+Todas las llamadas a las funciones, accesos a recursos y errores relevantes se registran en **Cloud Logging** y pueden ser auditados posteriormente. Esto permite detectar patrones sospechosos, identificar incidentes de seguridad y generar reportes de cumplimiento normativo.
+
+Estas medidas permiten que el sistema cumpla con los estándares de seguridad esperados en el sector bancario, garantizando la protección de los datos sensibles de los usuarios, la confidencialidad de las transacciones y la integridad operativa del sistema.
 
 ## 8.4. Mantenibilidad
-Describir cómo se ha diseñado el sistema para facilitar su mantenimiento.
+
+### Escenario hipotético
+
+Dado que el sistema es utilizado para autenticaciones biométricas en transacciones críticas, la arquitectura debe facilitar la detección temprana de errores, actualizaciones seguras y una rápida recuperación ante fallos. El mantenimiento eficiente es clave para garantizar la continuidad operativa del banco sin interrupciones para los usuarios finales.
+
+### Estrategias de diseño para la mantenibilidad
+
+#### 1. Repositorio centralizado y modularidad del código
+
+Todo el código fuente del sistema está escrito en **Python** y mantenido en un repositorio único y versionado en **GitHub**. Las funciones están organizadas modularmente, lo que facilita la lectura, pruebas y modificación de componentes individuales sin afectar el sistema completo.
+
+#### 2. Integración continua y despliegue automatizado
+
+Se ha implementado un **pipeline CI/CD** utilizando **GitHub Actions**, que automatiza las siguientes tareas al realizar cambios en la rama `main`:
+
+- Construcción de contenedores para las funciones.
+- Ejecución de pruebas unitarias y de integración.
+- Análisis estático de código para garantizar calidad y cumplimiento de estándares.
+- Despliegue automatizado en el entorno de producción de Google Cloud Platform (GCP), únicamente si todas las etapas previas se completan exitosamente.
+
+#### 3. Implementación gradual y reversión de versiones
+
+Cada despliegue de Cloud Functions está configurado para:
+
+- **Asignar gradualmente tráfico** a la nueva versión (por ejemplo, 10% al inicio), permitiendo validación en producción con bajo impacto.
+- **Revertir fácilmente** a la versión anterior en caso de errores críticos detectados post-despliegue, utilizando las capacidades de versionado nativo de Cloud Functions.
+
+#### 4. Ambientes diferenciados para pruebas
+
+Se cuenta con un **ambiente de testing aislado** (proyecto independiente en GCP), en el cual se pueden desplegar nuevas versiones del sistema y probar funcionalidades sin afectar a los usuarios reales ni comprometer datos sensibles.
+
+#### 5. Observabilidad y monitoreo continuo
+
+La integración con **Cloud Logging**, **Error Reporting** y **Cloud Monitoring** permite detectar de forma temprana fallos, analizar patrones de error, y recibir alertas en tiempo real que facilitan el diagnóstico y resolución ágil de incidencias.
+
+
+Gracias a estas prácticas, el sistema de autenticación biométrica está diseñado para ser altamente mantenible, reduciendo tiempos de respuesta ante fallos, minimizando el riesgo de regresiones y facilitando la evolución continua de la solución sin interrumpir la operación bancaria.
 
 # 9. Riesgos y Deuda Técnica 
 ## 9.1. Riesgos Identificados
-Enumerar los riesgos identificados y su posible impacto en el proyecto.
+
+En esta sección se enumeran los principales riesgos técnicos y operativos identificados durante el diseño del sistema de autenticación facial. Se evalúa su posible impacto sobre la seguridad, disponibilidad, desempeño y continuidad del servicio en el contexto del entorno bancario.
+
+| ID   | Riesgo                                                       | Descripción                                                                                         | Impacto Potencial                         | Nivel de Riesgo |
+|------|--------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|-------------------------------------------|-----------------|
+| R-01 | Fallo en el reconocimiento facial                            | DeepFace puede fallar en condiciones de baja calidad de imagen, iluminación deficiente o diversidad facial. | Rechazo de transacciones legítimas, mala UX. | Alto            |
+| R-02 | Latencia por cold start en funciones                         | Cloud Functions pueden tardar en responder si no han sido invocadas recientemente.                  | Afecta la experiencia del usuario final.   | Medio           |
+| R-03 | Dependencia del ecosistema GCP                               | Alta dependencia de servicios gestionados de Google.                                                | Difícil migración o continuidad fuera de GCP. | Alto         |
+| R-04 | Escalabilidad descontrolada en horas pico                    | Uso intensivo podría generar consumo inesperado de recursos.                                        | Costos elevados y posible saturación.      | Medio           |
+| R-05 | Fallo en el pipeline de despliegue automático                | Error en GitHub Actions podría desplegar versiones defectuosas o interrumpir actualizaciones.       | Degradación del servicio o downtime.       | Alto            |
+| R-06 | Fuga o acceso no autorizado a datos sensibles                | Riesgo de exposición de imágenes biométricas o datos personales por errores de configuración.       | Incumplimiento regulatorio y pérdida de confianza. | Crítico     |
+| R-07 | Cambios en las APIs de servicios externos (Vision AI, DeepFace) | Alteraciones en APIs podrían romper funcionalidades clave.                                         | Interrupción del servicio o errores silenciosos. | Medio       |
+| R-08 | Baja cobertura de pruebas en nuevas versiones                | Ausencia de pruebas automatizadas adecuadas en funciones nuevas.                                   | Introducción de bugs en producción.        | Alto            |
+| R-09 | Configuraciones incorrectas de IAM o VPC                     | Roles mal asignados o acceso a red inadecuado.                                                     | Exposición a amenazas externas.            | Alto            |
+
+La identificación temprana de estos riesgos permite establecer planes de mitigación y contingencia para garantizar la estabilidad y seguridad del sistema ante escenarios adversos.
+
 
 ## 9.2. Deuda Técnica
-Describir cualquier área de deuda técnica y los planes para su resolución.
+
+Durante el desarrollo inicial del sistema de autenticación biométrica se han identificado algunas áreas donde, por restricciones de tiempo o priorización de funcionalidades críticas, no se logró alcanzar el nivel óptimo de calidad técnica. Estas situaciones representan **deuda técnica** que deberá ser gestionada en futuras iteraciones para garantizar la sostenibilidad y escalabilidad del sistema a largo plazo.
+
+### Áreas identificadas de deuda técnica
+
+| ID    | Área                                | Descripción                                                                                      | Riesgo asociado                             | Plan de resolución                                  |
+|-------|-------------------------------------|--------------------------------------------------------------------------------------------------|---------------------------------------------|------------------------------------------------------|
+| DT-01 | Pruebas automatizadas incompletas   | Algunas funciones críticas carecen de cobertura de pruebas unitarias y de integración.         | Introducción de errores en producción.      | Implementar pruebas con PyTest en todas las funciones. Estimado: Sprint 3. |
+| DT-02 | Validaciones limitadas en entradas  | El sistema no realiza validaciones profundas sobre las imágenes o metadatos recibidos.         | Posible procesamiento erróneo o fallos silenciosos. | Agregar validaciones y manejo robusto de errores. Estimado: Sprint 4. |
+| DT-03 | Monitoreo parcial de métricas       | Falta de métricas personalizadas en algunas funciones (tiempo de respuesta, errores por tipo). | Baja visibilidad para diagnóstico y escalado. | Incorporar métricas con Cloud Monitoring. Estimado: Sprint 5. |
+| DT-04 | Gestión manual de roles IAM         | Algunos permisos aún se asignan de forma manual.                                                | Posibles errores de seguridad o privilegios excesivos. | Automatizar asignación de roles vía Terraform. Estimado: Sprint 6. |
+| DT-05 | Falta de pruebas de carga           | No se ha evaluado el sistema bajo tráfico simulado a gran escala.                              | Riesgo de falla bajo alta concurrencia.     | Implementar pruebas con Locust o k6. Estimado: Sprint 7. |
+| DT-06 | Implementación pendiente de VPC     | El sistema aún no ha sido migrado a una red privada (VPC).                                      | Riesgo de exposición innecesaria en endpoints sensibles. | Configurar VPC y restringir acceso externo. Estimado: Sprint 2. |
+
+La deuda técnica es monitoreada activamente y documentada como parte del backlog del equipo de desarrollo. Su resolución forma parte del plan de mejora continua, alineado con los objetivos de calidad, seguridad y cumplimiento normativo del sector financiero.
+
 
 # 10. Apéndices 
 ## 10.1. Glosario
