@@ -498,10 +498,109 @@ La deuda técnica es monitoreada activamente y documentada como parte del backlo
 
 # 10. Apéndices 
 ## 10.1. Glosario
-Ver sección _1.3. Definiciones, Acrónimos y Abreviaturas_.
+
+Para consultar las definiciones clave de los términos técnicos utilizados en este documento, refiérase a la sección **1.3. Definiciones, Acrónimos y Abreviaturas**. Esta sección contiene la descripción de conceptos como:
+
+- **Cloud Function**
+- **Pub/Sub**
+- **BigQuery**
+- **OCR (Reconocimiento Óptico de Caracteres)**
+- **DeepFace**
+- **OAuth 2.0**
+- **VPC (Virtual Private Cloud)**
+- **Pipeline CI/CD**
+- **Cold Start**
+- **Autenticación Biométrica**
+
+Estas definiciones ayudan a garantizar una comprensión común entre todos los equipos técnicos y no técnicos involucrados en el desarrollo, operación y mantenimiento del sistema.
+
+---
 
 ## 10.2. Índice
-Incluir un índice de términos y secciones para facilitar la navegación.
 
-# 10.3. Historial de Revisión
-Documentar el historial de revisiones de este documento.
+A continuación se presenta un índice de secciones y términos clave incluidos en el documento, con el objetivo de facilitar su navegación y consulta:
+
+### Secciones principales
+
+## Índice del Documento
+
+- [1. Introducción](#1-introducción)
+  - [1.1. Propósito](#11-propósito)
+    - [Audiencia Prevista](#audiencia-prevista)
+    - [Uso Previsto](#uso-previsto)
+  - [1.2 Alcance](#12-alcance)
+  - [1.3. Definiciones, Acrónimos y Abreviaturas](#13-definiciones-acrónimos-y-abreviaturas)
+    - [1.3.1 Definiciones](#131-definiciones)
+    - [1.3.2 Acrónimos y Abreviaturas](#132-acrónimos-y-abreviaturas)
+  - [1.4. Referencias](#14-referencias)
+  - [1.5. Resumen](#15-resumen)
+- [2. Representación Arquitectónica](#2-representación-arquitectónica)
+  - [2.1. Estilo Arquitectónico](#21estilo-arquitectónico)
+  - [2.2. Justificación del Uso del Estilo Arquitectónico](#22-justificación-del-uso-del-estilo-arquitectónico)
+- [3. Partes Interesadas y Preocupaciones del Sistema](#3-partes-interesadas-y-preocupaciones-del-sistema)
+  - [3.1. Partes Interesadas](#31-partes-interesadas)
+  - [3.2. Preocupaciones del Sistema](#32-preocupaciones-del-sistema)
+- [4. Visión General del Sistema](#4-visión-general-del-sistema)
+  - [4.1. Descripción de Alto Nivel](#41-descripción-de-alto-nivel)
+    - [Funcionalidades principales](#funcionalidades-principales)
+    - [Componentes clave del sistema](#componentes-clave-del-sistema)
+- [5. Estrategias Arquitectónicas](#5-estrategias-arquitectónicas)
+  - [5.1. Estrategias Clave](#51-estrategias-clave)
+    - [1. Arquitectura Serverless basada en eventos](#1-arquitectura-serverless-basada-en-eventos)
+    - [2. Desacoplamiento mediante Cloud Pub/Sub](#2-desacoplamiento-mediante-cloud-pubsub)
+    - [3. Procesamiento inteligente con Google Vision AI y DeepFace](#3-procesamiento-inteligente-con-google-vision-ai-y-deepface)
+    - [4. No almacenamiento persistente de las imágenes en base de datos](#4-no-almacenamiento-persistente-de-las-imágenes-en-base-de-datos)
+    - [5. Minimización del costo operativo](#5-minimización-del-costo-operativo)
+    - [6. Separación de responsabilidades y modularidad](#6-separación-de-responsabilidades-y-modularidad)
+- [6. Arquitectura del Sistema](#6-arquitectura-del-sistema)
+  - [6.1. Resumen de Capas/Módulos](#61-resumen-de-capasmódulos)
+  - [6.2. Diagramas de Componentes](#62-diagramas-de-componentes)
+    - [6.2.1 Vista general del sistema](#621-vista-general-del-sistema)
+    - [6.2.2 Vista detallada del sistema](#622-vista-detallada-del-sistema)
+  - [6.3. Diseño de la Base de Datos](#63-diseño-de-la-base-de-datos)
+- [7. Decisiones Arquitectónicas Clave](#7-decisiones-arquitectónicas-clave)
+  - [7.1. Registro de Decisiones](#71-registro-de-decisiones)
+    - [7.1.1 Pros y Contras](#711-pros-y-contras)
+    - [7.1.2 Alternativas y Balance de Factores](#712-alternativas-y-balance-de-factores)
+    - [7.1.3 Problemas Potenciales](#713-problemas-potenciales)
+    - [7.1.4 Dependencias a Considerar](#714-dependencias-a-considerar)
+- [8. Atributos de Calidad](#8-atributos-de-calidad)
+  - [8.1. Rendimiento](#81-rendimiento)
+  - [8.2. Escalabilidad](#82-escalabilidad)
+  - [8.3. Seguridad](#83-seguridad)
+  - [8.4. Mantenibilidad](#84-mantenibilidad)
+- [9. Riesgos y Deuda Técnica](#9-riesgos-y-deuda-técnica)
+  - [9.1. Riesgos Identificados](#91-riesgos-identificados)
+  - [9.2. Deuda Técnica](#92-deuda-técnica)
+- [10. Apéndices](#10-apéndices)
+  - [10.1. Glosario](#101-glosario)
+  - [10.2. Índice](#102-índice)
+  - [10.3. Historial de Revisión](#103-historial-de-revisión)
+
+
+### Términos clave
+
+- **Autenticación biométrica**
+- **Cloud Function**
+- **DeepFace**
+- **OCR**
+- **BigQuery**
+- **OAuth 2.0**
+- **CI/CD**
+- **VPC**
+- **Cold Start**
+- **Pipeline**
+- **Serverless**
+- **GCP (Google Cloud Platform)**
+
+## 10.3. Historial de Revisión
+
+A continuación se detalla el historial de revisiones del presente documento, con el objetivo de mantener un registro transparente de los cambios realizados a lo largo del tiempo:
+
+| Versión | Fecha       | Descripción                                                                 | Autor(es)                                  |
+|---------|-------------|------------------------------------------------------------------------------|--------------------------------------------|
+| 0.1     | 2025-02-17  | Versión inicial del documento.                                              | Joan Armando Carballo                      |
+| 0.2     | 2025-03-04  | Se agregan diagramas de arquitectura y detalle de componentes.              | Joan Armando Carballo, Jairo Bonilla       |
+| 0.3     | 2025-03-19  | Inclusión de atributos de calidad, decisiones arquitectónicas y riesgos.    | Joan Armando Carballo, Jairo Bonilla       |
+| 1.0     | 2025-04-18  | Versión consolidada final con índice, glosario, historial y control de cambios. | Joan Armando Carballo, Jairo Bonilla    |
+
