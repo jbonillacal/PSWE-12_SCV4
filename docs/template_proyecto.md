@@ -202,7 +202,43 @@ Las siguientes estrategias arquitectónicas se han definido para abordar de form
 
 # 6. Arquitectura del Sistema
 ## 6.1. Resumen de Capas/Módulos
-Proporcionar un resumen de las capas o módulos del sistema.
+
+El sistema se compone de una arquitectura distribuida en servicios especializados, cada uno con responsabilidades claramente definidas, desacoplados mediante eventos asíncronos. A continuación se describen las principales capas o módulos:
+
+### 6.1.1. Capa de Entrada / Lógica de Negocio
+- **gcf-facial-recognition**
+  - Función RESTful expuesta de forma privada mediante HTTPS.
+  - Es el punto de entrada principal al sistema.
+  - Realiza la verificación facial utilizando DeepFace.
+  - Invoca internamente a la función `gcf-image-text-extract` para extraer texto del documento de identidad.
+  - Publica los resultados en un tópico de Pub/Sub para su procesamiento posterior.
+
+### 6.1.2. Capa de Procesamiento Interno
+- **gcf-image-text-extract**
+  - Función interna (no expuesta públicamente).
+  - Utiliza Google Cloud Vision AI para realizar OCR sobre imágenes de identificaciones.
+  - Retorna un objeto JSON estructurado con los datos extraídos, listos para ser registrados o analizados.
+
+### 6.1.3. Capa de Interfaz de Usuario / Backoffice
+- **gcr-vue-app**
+  - Aplicación web desarrollada en Vue.js, desplegada en Cloud Run.
+  - Sirve como entorno de prueba o backoffice para operadores o desarrolladores.
+  - Envía flujos de imágenes (selfies e IDs) al punto de entrada (`gcf-facial-recognition`).
+  - Muestra en tiempo real si la autenticación fue exitosa o fallida.
+
+### 6.1.4. Capa de Comunicación Asíncrona
+- **Pub/Sub**
+  - Middleware de mensajería que permite desacoplar el procesamiento posterior.
+  - Recibe los resultados de autenticación y los entrega a suscriptores encargados de almacenarlos o analizarlos.
+  - Mejora la escalabilidad y la tolerancia a fallos del sistema.
+
+### 6.1.5. Capa de Persistencia y Análisis
+- **BigQuery**
+  - Almacén de datos analíticos (Data Warehouse).
+  - Recibe información desde Pub/Sub para análisis posterior.
+  - Permite generar reportes por compañía, evaluar patrones de uso y monitorear autenticaciones exitosas o fallidas.
+
+Esta estructura modular y basada en servicios serverless permite escalar independientemente cada componente, mantener bajo acoplamiento y lograr eficiencia operativa, ideal para entornos sensibles como la autenticación bancaria.
 
 ## 6.2 Diagramas de Componentes
 ### 6.2.1 Vista general del sistema
