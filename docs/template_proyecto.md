@@ -68,7 +68,7 @@ El sistema debe ser capaz de manejar múltiples solicitudes concurrentes de mane
 Enumerar otros documentos, sitios web o materiales referenciados en este documento.
 
 ## 1.5. Resumen
-Proporcionar un breve resumen de las secciones siguientes del documento.
+El documento presenta la arquitectura técnica de un sistema de reconocimiento facial basado en DeepFace y desplegado en Google Cloud Platform, usando una arquitectura serverless. Comienza con una introducción que define el propósito, alcance y público objetivo, seguido por la descripción del estilo arquitectónico serverless basado en microservicios. Se identifican las partes interesadas, sus preocupaciones clave y cómo se abordan mediante estrategias como el desacoplamiento con Pub/Sub, uso de Vision AI y DeepFace, y la eliminación de almacenamiento persistente. Se detalla la organización del sistema en capas (entrada, procesamiento, interfaz, comunicación y análisis), junto con las decisiones arquitectónicas más relevantes. Se analizan atributos de calidad como rendimiento, escalabilidad, seguridad y mantenibilidad, y se enumeran los principales riesgos y áreas de deuda técnica que requieren atención futura. El documento concluye con apéndices que incluyen un glosario, índice y control de versiones.
 
 # 2. Representación Arquitectónica 
 ## 2.1.Estilo Arquitectónico
@@ -122,16 +122,16 @@ Todo el monitoreo, actualización de parches de seguridad y escalabilidad son ma
 
 ## 3.2. Preocupaciones del Sistema
 
-| Categoría           | Preocupación del Sistema                                                        | Estrategia de Mitigación Propuesta                                     |
-|---------------------|----------------------------------------------------------------------------------|------------------------------------------------------------------------|
-| **Rendimiento**     | El sistema debe validar identidades en tiempo razonable, sin demoras perceptibles para el usuario. | Uso de funciones *serverless* (Cloud Functions) con procesamiento concurrente. Se espera < 3 segundos en el 95% de los casos. |
-| **Escalabilidad**   | El sistema debe manejar picos de demanda sin degradación del servicio.          | Arquitectura basada en eventos y componentes *serverless* que escalan automáticamente (Cloud Functions, Pub/Sub). |
-| **Seguridad**       | Protección de imágenes personales y datos sensibles durante el almacenamiento y procesamiento. | Uso de **Cloud Storage buckets privados**, encriptación en tránsito y en reposo, y acceso controlado mediante IAM. |
+| Categoría           | Preocupación del Sistema                                                        | Estrategia de Mitigación Propuesta                                                                                                  |
+|---------------------|----------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| **Rendimiento**     | El sistema debe validar identidades en tiempo razonable, sin demoras perceptibles para el usuario. | Uso de funciones *serverless* (Cloud Functions) con procesamiento concurrente. Se espera < 3 segundos en el 95% de los casos.       |
+| **Escalabilidad**   | El sistema debe manejar picos de demanda sin degradación del servicio.          | Arquitectura basada en eventos y componentes *serverless* que escalan automáticamente (Cloud Functions, Pub/Sub).                   |
+| **Seguridad**       | Protección de imágenes personales y datos sensibles durante el almacenamiento y procesamiento. | Uso de **Cloud Storage buckets privados**, encriptación en tránsito y en reposo, y acceso controlado mediante IAM.                  |
 | **Privacidad**      | Protección de la identidad del usuario final.                                   | Eliminación automática de imágenes después de 24h, almacenamiento temporal, y cumplimiento con principios de minimización de datos. |
-| **Costo**           | Optimización del uso de recursos para evitar costos innecesarios.               | Pago por uso con servicios *serverless* (solo se incurre en costos cuando hay actividad). No hay servidores siempre encendidos. |
-| **Mantenibilidad**  | Facilidad para actualizar o extender el sistema sin afectar a los usuarios.     | Componentes desacoplados mediante Pub/Sub. Código modular en Python con funciones independientes. |
-| **Auditoría y trazabilidad** | Posibilidad de auditar el flujo de validaciones, identificar errores o abusos. | Firestore guarda los eventos de validación. Todos los pasos clave se registran con timestamps. |
-| **Disponibilidad**  | El sistema debe estar disponible 24/7, incluso ante fallos parciales.           | Infraestructura distribuida en GCP, servicios de alta disponibilidad y escalabilidad automática. |
+| **Costo**           | Optimización del uso de recursos para evitar costos innecesarios.               | Pago por uso con servicios *serverless* (solo se incurre en costos cuando hay actividad). No hay servidores siempre encendidos.     |
+| **Mantenibilidad**  | Facilidad para actualizar o extender el sistema sin afectar a los usuarios.     | Componentes desacoplados mediante Pub/Sub. Código modular en Python con funciones independientes.                                   |
+| **Auditoría y trazabilidad** | Posibilidad de auditar el flujo de validaciones, identificar errores o abusos. | BigQuery guarda los eventos de validación. Todos los pasos clave se registran con timestamps.                                       |
+| **Disponibilidad**  | El sistema debe estar disponible 24/7, incluso ante fallos parciales.           | Infraestructura distribuida en GCP, servicios de alta disponibilidad y escalabilidad automática.                                    |
 
 # 4. Visión General del Sistema
 
@@ -152,13 +152,13 @@ La solución está diseñada para ser **escalable**, **segura** y **eficiente**,
 
 ### Componentes clave del sistema:
 
-| Componente                     | Descripción                                                                 |
-|--------------------------------|-----------------------------------------------------------------------------|
-| **Google Cloud Storage (GCS)** | Almacena temporalmente las imágenes subidas por los usuarios.              |
-| **Cloud Functions (Python)**   | Procesan cada etapa del flujo: carga, extracción OCR, comparación facial, etc. |
-| **Google Vision AI**           | API que permite extraer texto y realizar detección facial en las imágenes. |
-| **Cloud Pub/Sub**              | Facilita la comunicación asíncrona entre funciones para enviar notificaciones. |
-| **Big Query**                  | Almacenamiento de registros de validación para análisis histórico.      |
+| Componente                  | Descripción                                                                               |
+|-----------------------------|-------------------------------------------------------------------------------------------|
+| **DeepFace (Python)**       | Realiza tareas relacionadas con el análisis y verificación de rostros humanos en imágenes |
+| **Cloud Functions (Python)** | Procesan cada etapa del flujo: carga, extracción OCR, comparación facial, etc.            |
+| **Google Vision AI**        | API que permite extraer texto y realizar detección facial en las imágenes.                |
+| **Cloud Pub/Sub**           | Facilita la comunicación asíncrona entre funciones para enviar notificaciones.            |
+| **Big Query**               | Almacenamiento de registros de validación para análisis histórico.                        |
 
 Este enfoque modular permite que el sistema se adapte fácilmente a cambios o mejoras, manteniendo bajo control los costos operativos y asegurando un rendimiento óptimo.
 
@@ -633,10 +633,11 @@ A continuación se presenta un índice de secciones y términos clave incluidos 
 
 A continuación se detalla el historial de revisiones del presente documento, con el objetivo de mantener un registro transparente de los cambios realizados a lo largo del tiempo:
 
-| Versión | Fecha       | Descripción                                                                 | Autor(es)                                  |
-|---------|-------------|------------------------------------------------------------------------------|--------------------------------------------|
-| 0.1     | 2025-02-17  | Versión inicial del documento.                                              | Joan Armando Carballo                      |
-| 0.2     | 2025-03-04  | Se agregan diagramas de arquitectura y detalle de componentes.              | Joan Armando Carballo, Jairo Bonilla       |
-| 0.3     | 2025-03-19  | Inclusión de atributos de calidad, decisiones arquitectónicas y riesgos.    | Joan Armando Carballo, Jairo Bonilla       |
-| 1.0     | 2025-04-18  | Versión consolidada final con índice, glosario, historial y control de cambios. | Joan Armando Carballo, Jairo Bonilla    |
+| Versión | Fecha      | Descripción                                                                     | Autor(es)                                  |
+|---------|------------|---------------------------------------------------------------------------------|--------------------------------------------|
+| 0.1     | 2025-02-17 | Versión inicial del documento.                                                  | Joan Armando Carballo                      |
+| 0.2     | 2025-03-04 | Se agregan diagramas de arquitectura y detalle de componentes.                  | Joan Armando Carballo, Jairo Bonilla       |
+| 0.3     | 2025-03-19 | Inclusión de atributos de calidad, decisiones arquitectónicas y riesgos.        | Joan Armando Carballo, Jairo Bonilla       |
+| 1.0     | 2025-04-18 | Versión consolidada final con índice, glosario, historial y control de cambios. | Joan Armando Carballo, Jairo Bonilla    |
+| 1.1     | 2025-04-19 | Inclusión de resumen y referencias                                              | Joan Armando Carballo, Jairo Bonilla    |
 
