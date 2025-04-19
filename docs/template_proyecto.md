@@ -218,14 +218,15 @@ No se utilizó una base de datos en el sistema ya que las imágenes y los result
 ## 7.1. Registro de Decisiones
 A continuación, se documentan las decisiones arquitectónicas más relevantes tomadas durante el diseño del sistema, junto con su justificación técnica y estratégica:
 
-| Decisión Arquitectónica                                                                 | Justificación                                                                                                                                                 | Fecha       |
-|--------|------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------|
-| Uso de **Google Cloud Functions** para los servicios de reconocimiento facial y extracción de texto. | Enfoque *serverless* para reducir costos operativos, facilitar el mantenimiento y escalar automáticamente.                                                    | 2025-03-01  |
-| Integración con **DeepFace** para la verificación de identidad.                          | DeepFace ofrece un modelo preentrenado con alta precisión para verificación facial sin necesidad de entrenamiento personalizado.                              | 2025-03-03  |
-| Utilización de **Cloud Vision AI** para extracción de texto desde documentos.            | Vision AI permite obtener resultados OCR precisos para validar documentos como identificaciones.                                                              | 2025-03-05  |
-| Publicación de eventos en **Google Pub/Sub** para desacoplar el procesamiento posterior. | Pub/Sub permite comunicación asincrónica, escalabilidad y tolerancia a fallos entre funciones y otros componentes.                                            | 2025-03-07  |
-| Almacenamiento de resultados en **BigQuery** como base de datos analítica principal.     | BigQuery facilita análisis de grandes volúmenes de datos para auditoría y métricas por compañía.                                                              | 2025-03-08  |
-| Exposición de funciones mediante **HTTPS por defecto**, sin servidores intermedios.      | Cloud Functions y Cloud Run en GCP usan TLS por defecto, cumpliendo requisitos de seguridad sin configuración adicional.                                       | 2025-03-10  |
+| Decisión Arquitectónica                                                                  | Justificación                                                                                                                        | Fecha       |
+|------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|-------------|
+| Uso de Google Cloud Functions para los servicios de reconocimiento facial y extracción de texto. | Enfoque serverless para reducir costos operativos, facilitar el mantenimiento y escalar automáticamente.                            | 2025-03-01  |
+| Integración con DeepFace para la verificación de identidad.                              | DeepFace ofrece un modelo preentrenado con alta precisión para verificación facial sin necesidad de entrenamiento personalizado.      | 2025-03-03  |
+| Utilización de Cloud Vision AI para extracción de texto desde documentos.                | Vision AI permite obtener resultados OCR precisos para validar documentos como identificaciones.                                     | 2025-03-05  |
+| Publicación de eventos en Google Pub/Sub para desacoplar el procesamiento posterior.     | Pub/Sub permite comunicación asincrónica, escalabilidad y tolerancia a fallos entre funciones y otros componentes.                   | 2025-03-07  |
+| Almacenamiento de resultados en BigQuery como base de datos analítica principal.         | BigQuery facilita análisis de grandes volúmenes de datos para auditoría y métricas por compañía.                                     | 2025-03-08  |
+| Exposición de funciones mediante HTTPS por defecto, sin servidores intermedios.          | Cloud Functions y Cloud Run en GCP usan TLS por defecto, cumpliendo requisitos de seguridad sin configuración adicional.             | 2025-03-10  |
+
 ### 7.1.1 Pros y Contras
 
 En esta sección se analizan los principales beneficios y desafíos asociados a las decisiones arquitectónicas adoptadas en el diseño del sistema. Esta evaluación permite comprender los compromisos asumidos y las implicaciones técnicas, operativas y económicas del enfoque seleccionado.
@@ -456,17 +457,18 @@ Gracias a estas prácticas, el sistema de autenticación biométrica está dise�
 
 En esta sección se enumeran los principales riesgos técnicos y operativos identificados durante el diseño del sistema de autenticación facial. Se evalúa su posible impacto sobre la seguridad, disponibilidad, desempeño y continuidad del servicio en el contexto del entorno bancario.
 
-| Riesgo                                                       | Descripción                                                                                         | Impacto Potencial                         | Nivel de Riesgo |
-|------|--------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|-------------------------------------------|-----------------|
-| Fallo en el reconocimiento facial                            | DeepFace puede fallar en condiciones de baja calidad de imagen, iluminación deficiente o diversidad facial. | Rechazo de transacciones legítimas, mala UX. | Alto            |
-| Latencia por cold start en funciones                         | Cloud Functions pueden tardar en responder si no han sido invocadas recientemente.                  | Afecta la experiencia del usuario final.   | Medio           |
-| Dependencia del ecosistema GCP                               | Alta dependencia de servicios gestionados de Google.                                                | Difícil migración o continuidad fuera de GCP. | Alto         |
-| Escalabilidad descontrolada en horas pico                    | Uso intensivo podría generar consumo inesperado de recursos.                                        | Costos elevados y posible saturación.      | Medio           |
-| Fallo en el pipeline de despliegue automático                | Error en GitHub Actions podría desplegar versiones defectuosas o interrumpir actualizaciones.       | Degradación del servicio o downtime.       | Alto            |
-| Fuga o acceso no autorizado a datos sensibles                | Riesgo de exposición de imágenes biométricas o datos personales por errores de configuración.       | Incumplimiento regulatorio y pérdida de confianza. | Crítico     |
-| Cambios en las APIs de servicios externos (Vision AI, DeepFace) | Alteraciones en APIs podrían romper funcionalidades clave.                                         | Interrupción del servicio o errores silenciosos. | Medio       |
-| Baja cobertura de pruebas en nuevas versiones                | Ausencia de pruebas automatizadas adecuadas en funciones nuevas.                                   | Introducción de bugs en producción.        | Alto            |
-| Configuraciones incorrectas de IAM o VPC                     | Roles mal asignados o acceso a red inadecuado.                                                     | Exposición a amenazas externas.            | Alto            |
+| Riesgo                                         | Descripción                                                                                         | Impacto Potencial                                     | Nivel de Riesgo |
+|-----------------------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------|-----------------|
+| Fallo en el reconocimiento facial             | DeepFace puede fallar en condiciones de baja calidad de imagen, iluminación deficiente o diversidad facial. | Rechazo de transacciones legítimas, mala UX.          | Alto            |
+| Latencia por cold start en funciones          | Cloud Functions pueden tardar en responder si no han sido invocadas recientemente.                  | Afecta la experiencia del usuario final.               | Medio           |
+| Dependencia del ecosistema GCP                | Alta dependencia de servicios gestionados de Google.                                                | Difícil migración o continuidad fuera de GCP.          | Alto            |
+| Escalabilidad descontrolada en horas pico     | Uso intensivo podría generar consumo inesperado de recursos.                                        | Costos elevados y posible saturación.                  | Medio           |
+| Fallo en el pipeline de despliegue automático | Error en GitHub Actions podría desplegar versiones defectuosas o interrumpir actualizaciones.       | Degradación del servicio o downtime.                   | Alto            |
+| Fuga o acceso no autorizado a datos sensibles | Riesgo de exposición de imágenes biométricas o datos personales por errores de configuración.       | Incumplimiento regulatorio y pérdida de confianza.     | Crítico         |
+| Cambios en las APIs de servicios externos (Vision AI, DeepFace) | Alteraciones en APIs podrían romper funcionalidades clave.                                         | Interrupción del servicio o errores silenciosos.       | Medio           |
+| Baja cobertura de pruebas en nuevas versiones | Ausencia de pruebas automatizadas adecuadas en funciones nuevas.                                   | Introducción de bugs en producción.                    | Alto            |
+| Configuraciones incorrectas de IAM o VPC      | Roles mal asignados o acceso a red inadecuado.                                                     | Exposición a amenazas externas.                        | Alto            |
+
 
 La identificación temprana de estos riesgos permite establecer planes de mitigación y contingencia para garantizar la estabilidad y seguridad del sistema ante escenarios adversos.
 
