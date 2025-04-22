@@ -93,11 +93,13 @@ Este sistema es ideal para una arquitectura *serverless* porque:
 
 ## 3. Requerimientos No-funcionales o de calidad
 
-| Categoría              | Requerimiento|
-|------------------------|----------|
-| Escalabilidad          | La aplicación debe escalar automáticamente según la cantidad de usuarios sin intervención manual.  |
-| Disponibilidad         | El sistema debe estar disponible 24/7 con un 99.9% de uptime.  | 
-| Seguridad              | Las imágenes y datos del usuario deben almacenarse en un bucket privado encriptado. - Se deben eliminar imágenes temporales después de 24 horas.  | 
-| Latencia               | El tiempo de procesamiento por validación no debe exceder los 3 segundos en el 95% de los casos.  | 
-| Costo-Eficiencia       | Se debe utilizar un modelo serverless para minimizar costos, con pago basado en uso.  | 
-| Registro de Auditoría  | Se debe registrar cada validación con su resultado y razones de fallo.  | 
+| Atributo de Calidad   | Fuente                                     | Estímulo                                                              | Entorno                             | Respuesta                                                                                                                         | Métrica                                                                 |
+|-----------------------|--------------------------------------------|-----------------------------------------------------------------------|--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| Escalabilidad         | Aumento de usuarios simultáneos            | Incremento repentino en solicitudes de validación facial              | Operación normal                     | Escalamiento automático hasta 10 instancias serverless (mínimo 1 activa). Cada instancia con 8GB RAM y 2 vCPU para evitar cold starts | Manejo de hasta 10x carga base sin degradación. Cold start ≤ 1 vez por día |
+| Disponibilidad        | Usuarios accediendo desde cualquier lugar  | Solicitudes concurrentes o carga alta                                 | 24/7                                 | Sistema se mantiene disponible sin interrupciones                                                                                | ≥ 99.9% de uptime mensual                                              |
+| Seguridad             | Usuario envía imágenes personales          | Transmisión de datos entre cliente y servidor                         | Durante el proceso de autenticación  | Comunicación sobre HTTPS, servicios protegidos por VPN, acceso mediante token OAuth. No se almacena información del usuario       | 100% conexiones HTTPS, VPN activa, OAuth requerido. 0% de almacenamiento en reposo |
+| Latencia              | Usuario solicita autenticación             | Backend recibe imagen para verificación facial                        | Carga normal y picos                 | Respuesta rápida del sistema con resultado de validación                                                                          | 95% de respuestas en ≤ 3 segundos                                      |
+| Costo-Eficiencia      | Operación continua                         | Uso variable del sistema                                              | Ciclo de vida del sistema            | Arquitectura serverless con escalado automático y pago por uso real                                                               | Sin costos fijos; facturación basada en invocaciones y recursos utilizados |
+| Registro de Auditoría| Usuario solicita autenticación             | Finalización de verificación facial                                   | Operación normal                     | Registro detallado del resultado con timestamp, éxito o fallo, y razón (si aplica)                                                | 100% de autenticaciones auditadas                                     |
+
+
