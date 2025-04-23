@@ -25,7 +25,7 @@ El sistema que cubrirá esta arquitectura se enfoca en ofrecer un servicio de re
 
 Las principales características incluyen:
 
-**Procesamiento de Reconocimiento Facial en Tiempo Real**: Respuesta sub-second mediante Cloud Functions configuradas para escalar dinámicamente de acuerdo con la demanda.
+**Procesamiento de Reconocimiento Facial en Tiempo Real**: Respuesta de máximo 3s mediante Cloud Functions configuradas para escalar dinámicamente de acuerdo con la demanda.
 
 **Extracción de Texto desde Imágenes**: Procesamiento de imágenes para extraer información textual relevante mediante Google Cloud AI, especialmente para identificar y extraer información de cédulas de las personas.
 
@@ -65,7 +65,19 @@ El sistema debe ser capaz de manejar múltiples solicitudes concurrentes de mane
 - REST: Representational State Transfer (Transferencia de Estado Representacional)
 
 ## 1.4. Referencias
-Enumerar otros documentos, sitios web o materiales referenciados en este documento.
+
+Taigman, Y., Yang, M., Ranzato, M. A., & Wolf, L. (2014). DeepFace: Closing the Gap to Human-Level Performance in Face Verification. 
+Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 1701–1708. https://doi.org/10.1109/CVPR.2014.220
+
+Smith, R. (2007). An Overview of the Tesseract OCR Engine. In Proceedings of the Ninth International Conference on Document Analysis and Recognition (Vol. 2, pp. 629–633). IEEE. https://doi.org/10.1109/ICDAR.2007.4376991
+
+Google Cloud. (2023). Cloud Pub/Sub Documentation. Google Cloud. https://cloud.google.com/pubsub/docs
+
+Google Cloud. (2023). Cloud Functions Documentation. Google Cloud. https://cloud.google.com/functions/docs
+
+Google Cloud. (2023). Cloud Vision API Documentation. Google Cloud. https://cloud.google.com/vision/docs
+
+Google Cloud. (2023). BigQuery Documentation. Google Cloud. https://cloud.google.com/bigquery/docs
 
 ## 1.5. Resumen
 El documento presenta la arquitectura técnica de un sistema de reconocimiento facial basado en DeepFace y desplegado en Google Cloud Platform, usando una arquitectura serverless. Comienza con una introducción que define el propósito, alcance y público objetivo, seguido por la descripción del estilo arquitectónico serverless basado en microservicios. Se identifican las partes interesadas, sus preocupaciones clave y cómo se abordan mediante estrategias como el desacoplamiento con Pub/Sub, uso de Vision AI y DeepFace, y la eliminación de almacenamiento persistente. Se detalla la organización del sistema en capas (entrada, procesamiento, interfaz, comunicación y análisis), junto con las decisiones arquitectónicas más relevantes. Se analizan atributos de calidad como rendimiento, escalabilidad, seguridad y mantenibilidad, y se enumeran los principales riesgos y áreas de deuda técnica que requieren atención futura. El documento concluye con apéndices que incluyen un glosario, índice y control de versiones.
@@ -397,8 +409,6 @@ Gracias a esta configuración, el sistema está diseñado para cumplir con los e
 
 ## 8.2. Escalabilidad
 
-### Escenario hipotético
-
 Nuestra arquitectura pretende abarcar sistemas de seguridad financieros y planea ampliar progresivamente el uso del sistema de autenticación facial, pasando de un piloto interno a una implementación a nivel nacional para todos los usuarios de banca en línea y móvil. Esto implica una proyección de crecimiento de usuarios activos desde 5.000 hasta más de 100.000 en un plazo de 12 meses, con picos de actividad en horarios bancarios y durante fechas de alto volumen transaccional (como quincenas o pagos de impuestos).
 
 ### Consideraciones de escalabilidad
@@ -450,8 +460,6 @@ Todas las llamadas a las funciones, accesos a recursos y errores relevantes se r
 Estas medidas permiten que el sistema cumpla con los estándares de seguridad esperados en el sector bancario, garantizando la protección de los datos sensibles de los usuarios, la confidencialidad de las transacciones y la integridad operativa del sistema.
 
 ## 8.4. Mantenibilidad
-
-### Escenario hipotético
 
 Dado que el sistema es utilizado para autenticaciones biométricas en transacciones críticas, la arquitectura debe facilitar la detección temprana de errores, actualizaciones seguras y una rápida recuperación ante fallos. El mantenimiento eficiente es clave para garantizar la continuidad operativa del banco sin interrupciones para los usuarios finales.
 
